@@ -402,6 +402,13 @@ current_action = actions_table[0, action_index]
 ;WIDGET_CONTROL, base, /REALIZE  
 ;XMANAGER, 'frontend', base
 
+; Other way
+; XMENU, SINDGEN(10), BASE = base, BUTTONS=B
+; WIDGET_CONTROL, /REALIZE, BASE
+; event = WIDGET_EVENT(base)
+; PRINT, 'Button pressed: ', where(b eq event.id)
+; WIDGET_CONTROL, base /DESTROY
+
 ;----------------------
 ; Apply action
 ;----------------------
