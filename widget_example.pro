@@ -1,3 +1,5 @@
+; Source: http://physics.nyu.edu/grierlab/idl_html_help/widget_techniques12.html#wp107230
+
 ; Main event-handler routine 
 PRO tab_widget_example2_event, ev 
  
