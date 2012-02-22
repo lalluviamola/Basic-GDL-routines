@@ -50,12 +50,10 @@ PRO context_menu_example_event, event
   IF (TAG_NAMES(event, /STRUCTURE_NAME) EQ 'WIDGET_CONTEXT') $
     THEN BEGIN
     ; Obtain the widget ID of the context menu base.
-    contextBase = WIDGET_INFO(event.ID, $
-      FIND_BY_UNAME = 'contextMenu')
+    contextBase = WIDGET_INFO(event.ID, FIND_BY_UNAME = 'contextMenu')
     ; Display the context menu and send its events to the
     ; other event handler routines.
-    WIDGET_DISPLAYCONTEXTMENU, event.ID, event.X, $
-      event.Y, contextBase
+    WIDGET_DISPLAYCONTEXTMENU, event.ID, event.X, event.Y, contextBase
  ENDIF
 
   ; Test for button event to end application

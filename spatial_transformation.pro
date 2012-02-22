@@ -1,4 +1,7 @@
-PRO SPATIAL_TRANSFORMATION
+FUNCTION SPATIAL_TRANSFORMATION, image_in,                                $
+                                 UNDERSAMPLE        = undersample,        $
+                                 OVERSAMPLE         = oversample,         $
+                                 REBIN_FACTOR       = rebin_factor
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -7,11 +10,7 @@ PRO SPATIAL_TRANSFORMATION
 ;
 ; Input:          -
 ; Output:         -
-; External calls: GAUSSIAN_2D           function
-;                 SCREEN_SIZE           procedure
-;                 CENTER_WINDOW_POS     procedure
-;                 VIS_2D                procedure
-;                 VIS_3D                procedure
+; External calls: -
 ; 
 ; Programmer:    Daniel Molina García (based on M. Messerotti's examples)
 ; Creation date: -
@@ -39,215 +38,112 @@ PRO SPATIAL_TRANSFORMATION
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; Derive maximum screen size (pxs)
-SCREEN_SIZE, x_screen, y_screen
+; REBIN_FACTOR must be specified
 
-; Define size of a standard graphic window (pxs)
-; as 1/2 of 90 % of screen size to allow the display
-; of two windows in the viewport
 
-x_standard_size = FLOOR(0.5 * 0.9 * x_screen)
-y_standard_size = x_standard_size
-
-; Set graphics mode to indexed CT
-DEVICE, DECOMPOSED = 0
-
-; Load 32-color palette
-LOADCT, 39
-
-; Define an asymetric 2-D Gaussian pseudo-image
-; (Small size helps in emphasizing various aspects
-;  in the transformed image, which would be smoothed
-;  out in a large image)
-
-x_size_1 = 64
-y_size_1 = 64
-
-sigma_x_1 = x_size_1 / 6
-sigma_y_1 = y_size_1 / 6
-
-image_1 = GAUSSIAN_2D(x_size_1, y_size_1, sigma_x_1, sigma_y_1)
-
-; Define centered window origin based on window size
-CENTER_WINDOW_POS, x_standard_size, y_standard_size, x_win_pos, y_win_pos
-
-; Open window
-WINDOW, 1, XSIZE = x_standard_size, YSIZE = y_standard_size, XPOS = x_win_pos, YPOS = y_win_pos, $
-        TITLE = '2-D Gaussian -- Original Image'
-
-; Draw axes based on image size
-PLOT, FINDGEN(x_size_1), FINDGEN(y_size_1), XSTYLE = 1, YSTYLE = 1,          $
-      XTITLE = '(pxs)', YTITLE = '(pxs)', TITLE = 'Original Image: '    +    $
-      STRTRIM(STRING(x_size_1), 2) + 'x' + STRTRIM(STRING(y_size_1), 2) +    $
-      ' pxs 2-D Gaussian', /NODATA, /NOERASE, POSITION = [0.1, 0.1, 0.9, 0.9]
-
-; Determine size of plot window as defined by the PLOT procedure
-; * !X.WINDOW, !Y.WINDOW   -- normalized coordinates of axis end points
-; * !D.X_VSIZE, !D.Y_VSIZE -- size of the visible area of window (pxs)
-
-plot_win_x_size = !X.WINDOW * !D.X_VSIZE
-plot_win_y_size = !Y.WINDOW * !D.Y_VSIZE
-
-; Define size of image to fit the plot window
-image_x_size = plot_win_x_size[1] - plot_win_x_size[0] + 1
-image_y_size = plot_win_y_size[1] - plot_win_y_size[0] + 1
-
-; Display original image rebinned according to new size
-TV, CONGRID(BYTSCL(image_1), image_x_size, image_y_size), plot_win_x_size[0], plot_win_y_size[0]
-
-; Redraw axes 
-PLOT, FINDGEN(x_size_1), FINDGEN(y_size_1), XSTYLE = 1, YSTYLE = 1,          $
-      XTITLE = '(pxs)', YTITLE = '(pxs)', TITLE = 'Original Image: '    +    $
-      STRTRIM(STRING(x_size_1), 2) + 'x' + STRTRIM(STRING(y_size_1), 2) +    $
-      ' pxs 2-D Gaussian', /NODATA, /NOERASE, POSITION = [0.1, 0.1, 0.9, 0.9]
-
-PRESS_MOUSE
+; Get dimensions of image
+x_size_in = (SIZE(image_in, /DIMENSIONS))[0]
+y_size_in = (SIZE(image_in, /DIMENSIONS))[1]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; UnderSampling -- Reduce image size by an integer factor
+;   CONGRID expects final dimensions. Read comments at the "for" loop
+;   for reading the details.
 
-; Set rebinning factor (same for both x- and y-axis to
-;  preserve image aspect ratio)
+if undersample then begin
 
-rebin_factor = 4
+   if rebin_factor ne FIX(rebin_factor)  then begin
+      message, 'SPATIAL_TRANSFORMATION not ready (yet) for not-integer undersampling.'
+      message, 'REBIN_FACTOR will be considered ', FIX(rebin_factor), 'instead of ', rebin_factor
+      rebin_factor = FIX(rebin_factor)
+   endif
 
-; Derive size of rebinned image
-x_size_2 = FLOOR(x_size_1 / rebin_factor)
-y_size_2 = FLOOR(y_size_1 / rebin_factor)
+   ; Derive size of rebinned image (it preserves aspect-ratio)
+   x_size_out = FLOOR(x_size_in / rebin_factor)
+   y_size_out = FLOOR(y_size_in / rebin_factor)
 
-; Create byte-type array to store rebinned image
-image_2 = BYTARR(x_size_2, y_size_2)
+   image_out  = BYTARR(x_size_out, y_size_out)
 
-; Rebin image
-
-; Scan rebinned image
-for x2 = 0, x_size_2 - 1 do begin
-   for y2 = 0, y_size_2 - 1 do begin
-
+   ; Scan rebinned image
+   for x2 = 0, x_size_out - 1 do begin
+      for y2 = 0, y_size_out - 1 do begin
+         
       ; Reset summation buffer
-      sum = 0.
+         sum = 0.
 
       ; Sum pixel attributes of original image in a square window
       ; of size (rebin_factor) and origin based on the inverse 
-      ; transform of the pixel address in the rebinned image
-      for x1 = x2 * rebin_factor, (x2 + 1) * rebin_factor - 1 do begin
-         for y1 = y2 * rebin_factor, (y2 + 1) * rebin_factor - 1 do begin
+      ; transform of the pixel address -in the rebinned image
+         for x1 = x2 * rebin_factor, (x2 + 1) * rebin_factor - 1 do begin
+            for y1 = y2 * rebin_factor, (y2 + 1) * rebin_factor - 1 do begin
             
-            sum = sum + image_1[x1, y1]
+               sum = sum + image_in[x1, y1]
 
+            endfor
          endfor
-      endfor
-      
+         
       ; Assign the mean of the pixel attributes in the window
       ; to the transformated pixel in the rebinned image
-      image_2[x2, y2] = sum / rebin_factor^2
+         image_out[x2, y2] = sum / rebin_factor^2
+
+      endfor
    endfor
-endfor
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; 2-D visualization
+   return, image_out
 
-; Define plot labels
-win_title = 'Image Undersampling by Integer Factor = ' + $
-            STRTIM(STRING(rebin_factor), 2)
-x_title_1 = '(pxs)'
-y_title_1 = '(pxs)'
-title_1   = 'Original Image: ' + STRTRIM(STRING(x_size_1), 2) + $
-            ' x ' + STRTRIM(STRING(y_size_1), 2) + 'pxs'
-x_title_2 = '(pxs)'
-y_title_2 = '(pxs)'
-title_2   = 'Rebinned Image: ' + STRTRIM(STRING(x_size_2), 2) + 'x' + $
-            STRTIM(STRING(y_size_2), 2) + 'pxs'
+endif
 
-; Draw 2-D plots
-VIS_2D, x_standard_size, y_standard_size, win_title, image_1, x_size_1, y_size_1, $
-        image_2, x_size_2, y_size_2, x_title_1, y_title_1, title_1, x_title_2,    $
-        y_title_2, title_2
-
-; Activate graphic cursor and wait for key pressed,
-PRESS_MOUSE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; OverSampling -- Expand image size by an integer factor
 
-; Set rebinning factor (same for both x- and y-axis to
-;  preserve image aspect ratio)
-rebin_factor = 2
+; Check that it is an integer factor
+if ( oversample and (rebin_factor eq FIX(rebin_factor)) ) then begin
 
 ; Derive size of rebinned image
-x_size_2 = FLOOR(x_size_1 * rebin_factor)
-y_size_2 = FLOOR(y_size_1 * rebin_factor)
+   x_size_2 = FLOOR(x_size_1 * rebin_factor)
+   y_size_2 = FLOOR(y_size_1 * rebin_factor)
 
 ; Create byte-type array to store rebinned image
-image_2 = BYTARR(x_size_2, y_size_2)
+   image_out = BYTARR(x_size_2, y_size_2)
 
-; Rebin image
 
 ; Scan rebinned image
-for x2 = 0, x_size_2 - 1 do begin
-   for y2 = 0, y_size_2 -1 do begin
+   for x2 = 0, x_size_2 - 1 do begin
+      for y2 = 0, y_size_2 -1 do begin
 
       ; Pixel attributes in original image are replicated
       ; in rebinned image a number of times defined by the
       ; rebinning factor
-      image_2[x2, y2] = image_1[x2 / rebin_factor, y2 / rebin_factor]
+         image_2[x2, y2] = image_1[x2 / rebin_factor, y2 / rebin_factor]
+      endfor
    endfor
-endfor
 
-; 2-D Visualization
-; Define plot labels
-win_title = 'Image Oversampling by Integer Factor N = ' + STRTRIM(STRING(rebin_factor), 2)
+endif
 
-title_1   = 'Original Image: ' + STRTRIM(STRING(x_size_1), 2) + ' x ' + $
-            STRTRIM(STRING(y_size_1), 2) + ' pxs'
-x_title_1 = '(pxs)'
-y_title_1 = '(pxs)'
 
-title_2   = 'Rebinned Image: ' + STRTRIM(STRING(x_size_2), 2) + ' x ' + $
-            STRTRIM(STRING(y_size_2), 2) + ' pxs'
-x_title_2 = '(pxs)'
-y_title_2 = '(pxs)'
 
-; Draw 2-D plots
-VIS_2D, x_standard_size, y_standard_size, win_title,                $
-        image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
-
-; Wait for user-confirmation
-PRESS_MOUSE
-
-; 3-D Visualization
-
-; Draw 3-D plots
-
-VIS_3D, x_standard_size, y_standard_size, win_title,                $
-        image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
-
-; Wait for user-confirmation
-PRESS_MOUSE
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;         I DON'T UNDERSTAND THIS SECTION!!!!
 ; OVERSAMPLING -- Expand image size by a non-integer factor via
 ;                 nearest neighbour pixel attribute assignment
 
-; Set rebinning factor (same for both x- and y-axis to
-;                       preserve image aspect radio)
-
-rebin_factor = 2.7
+if (   oversample                           and $
+     ( rebin_factor ne FIX(rebin_factor) )  and $
+       nearest_neighbour                        $
+   ) then begin
 
 ; Derive size of rebinned image
-x_size_2 = ROUND(x_size_1 * rebin_factor)
-y_size_2 = ROUND(y_size_1 * rebin_factor)
+   x_size = ROUND(x_size_1 * rebin_factor)
+   y_size = ROUND(y_size_1 * rebin_factor)
 
 ; Create byte-type array to store rebinned image
-image_2 = BYTARR(x_size_2 - 1) do begin
+   image_out = BYTARR(x_size - 1) do begin
 
 ; Rebin image
 
 ; Scan rebinned image
-for x2 = 0, x_size_2 -1 do begin
-   for y_2 = 0, y_size_2 -1 do begin
+      for x2 = 0, x_size -1 do begin
+         for y_2 = 0, y_size -1 do begin
 
                                 ; Pixel attributes in original image
                                 ; are replicated in rebinned image a
@@ -255,75 +151,44 @@ for x2 = 0, x_size_2 -1 do begin
                                 ; rebinning factor and pixel adresses
                                 ; are rounded  to the nearest integer
                                 ; (nearest neighbour approximation)
-      x1 = ROUND(x2 / rebin_factor)
-      y1 = ROUND(y2 / rebin_factor)
+            x1 = ROUND(x2 / rebin_factor)
+            y1 = ROUND(y2 / rebin_factor)
+      
+            if ( x1 GT 0 ) AND ( x1 LE (x_size - 1) ) AND ( y1 GE 0 ) AND ( y1 LE (y_size - 1)) then begin
+               image_out[x_2, y_2] = 0
+            endelse
+         endfor
+      endfor
 
-      if ( x1 GT 0 ) AND ( x1 LE (x_size_1 - 1) ) AND ( y1 GE 0 ) AND ( y1 LE (y_size_1 - 1)) then begin
-         image_2[x_2, y_2] = 0
-      endelse
-   endfor
-endfor
-
-; 2-D Visualization
-
-; Define plot labeles
-
-win_title = 'Nearest Neighbour Image Oversampling by Non-Integer factor N = ' $
-            + STRTRIM(STRING(rebin_factor), 2)
-
-title_1  = 'Original image: ' + STRTRIM(STRING(x_size_1), 2) + 'x'            $
-           + STRTRIM(STRING(y_size_1), 2) + ' pxs'
-x_title_1 = '(pxs)'
-y_title_1 = '(pxs)'
-
-title_2   = 'Rebinned image: ' + STRTRIM(STRING(x_size_2), 2) + 'x'            $
-           + STRTRIM(STRING(y_size_2), 2) + ' pxs'
-x_title_1 = '(pxs)'
-y_title_1 = '(pxs)'
+endif
 
 
-; Draw 2-D plots
-VIS_2D, x_standard_size, y_standard_size, win_title,                $
-        image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
 
-; Wait for user-confirmation
-PRESS_MOUSE
 
-; 3-D Visualization
-
-; Draw 3-D plots
-
-VIS_3D, x_standard_size, y_standard_size, win_title,                $
-        image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
-
-; Wait for user-confirmation
-PRESS_MOUSE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; OVERSAMPLING -- Expand image size by a non-integer factor via
 ;                 bilinear interpolation in pixel  attribute
 ;                 assignment
 
+if (   oversample                           and $
+     ( rebin_factor ne FIX(rebin_factor) )  and $
+       bilinear_interp                          $
+   ) then begin
 
-; Set rebinning factor (same for both x- and y-axis to
-;                       preserve image aspect radio)
-
-rebin_factor = 2.7
 
 ; Derive size of rebinned image
-x_size_2 = ROUND(x_size_1 * rebin_factor)
-y_size_2 = ROUND(y_size_1 * rebin_factor)
+x_size = ROUND(x_size_1 * rebin_factor)
+y_size = ROUND(y_size_1 * rebin_factor)
 
 ; Create byte-type array to store rebinned image
-image_2 = BYTARR(x_size_2 - 1) do begin
+image_out = BYTARR(x_size_2 - 1) do begin
 
 ; Rebin image
 
 ; Scan rebinned image
-for x2 = 0, x_size_2 -1 do begin
-   for y_2 = 0, y_size_2 -1 do begin
+for x2 = 0, x_size -1 do begin
+   for y_2 = 0, y_size -1 do begin
 
                                 ; Pixel attributes in original image
                                 ; are replicated in rebinned image a
@@ -349,72 +214,38 @@ for x2 = 0, x_size_2 -1 do begin
                                 ; does not exceed image range.
 
                                 ; Why 2 instead of 1 ??)
-      if ( x1 GT 0 ) AND ( x1 LE (x_size_1 - 2) ) AND ( y1 GE 0 ) AND ( y1 LE (y_size_1 - 2)) then begin
+      if ( x1 GT 0 ) AND ( x1 LE (x_size - 2) ) AND ( y1 GE 0 ) AND ( y1 LE (y_size - 2)) then begin
 
                                 ; Compute bilineal interpolation
                                 ; coefficients from original image
                                 ; pixel attributes
-         c1 = image_1[x_i    , y_i    ]
-         c2 = image_1[x_i    , y_i + 1]
-         c3 = image_1[x_i + 1, y_i    ]
-         c3 = image_1[x_i + 1, y_i + 1]
+         c1 = image_in[x_i    , y_i    ]
+         c2 = image_in[x_i    , y_i + 1]
+         c3 = image_in[x_i + 1, y_i    ]
+         c3 = image_in[x_i + 1, y_i + 1]
          
                                 ; Apply bilineal interpolation formula
                                 ; to define the pixel attribute in
                                 ; rebinned image as interpolation of
                                 ; pixel attributes in original image
-         image_2[x2, y2] =   c1 * (1 - x_f) * (1 - y_f) $
-                           + c2 * (1 - x_f) *    y_f    $
-                           + c3 *    x_f    * (1 - y_f) $
-                           + c4 *    x_f    *    y_f
+         image_out[x2, y2] =   c1 * (1 - x_f) * (1 - y_f) $
+                             + c2 * (1 - x_f) *    y_f    $
+                             + c3 *    x_f    * (1 - y_f) $
+                             + c4 *    x_f    *    y_f
       endif else begin
 
                                 ; Pixel addres in original image
                                 ; exceeds allowed range:
                                 ; -- set pixel attribute in rebinned
                                 ; image to zero
-         image_2[x2, y2] = 0
+         image_out[x2, y2] = 0
 
       endelse
    endfor
 endfor
 
-; 2-D Visualization
 
-; Define plot labeles
-
-win_title = 'Bilinear interpolation Image Oversampling by Non-Integer factor N = ' $
-            + STRTRIM(STRING(rebin_factor), 2)
-
-title_1  = 'Original image: ' + STRTRIM(STRING(x_size_1), 2) + 'x'            $
-           + STRTRIM(STRING(y_size_1), 2) + ' pxs'
-x_title_1 = '(pxs)'
-y_title_1 = '(pxs)'
-
-title_2   = 'Rebinned image: ' + STRTRIM(STRING(x_size_2), 2) + 'x'            $
-           + STRTRIM(STRING(y_size_2), 2) + ' pxs'
-x_title_1 = '(pxs)'
-y_title_1 = '(pxs)'
-
-
-; Draw 2-D plots
-VIS_2D, x_standard_size, y_standard_size, win_title,                $
-        image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
-
-; Wait for user-confirmation
-PRESS_MOUSE
-
-; 3-D Visualization
-
-; Draw 3-D plots
-
-VIS_3D, x_standard_size, y_standard_size, win_title,                $
-        image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
-
-; Wait for user-confirmation
-PRESS_MOUSE
+; IT MUST BE READAPTED THE REST!!!!!
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
