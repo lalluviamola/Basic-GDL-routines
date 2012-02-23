@@ -58,26 +58,46 @@ PRO VIS_3D, win_x_size, win_y_size, win_title,                           $
 CENTER_WINDOW_POS, 2 * win_x_size, y_win_size, x_win_pos, y_win_pos
 
 ; Open window
-WINDOW, 2, XSIZE = 2 * win_x_size, YSIZE = win_y_size, XPOS = x_win_pos, YPOS = y_win_pos, TITLE = win_title
+WINDOW, 2, XSIZE = 2 * win_x_size, YSIZE = win_y_size, $
+           XPOS  = x_win_pos,      YPOS = y_win_pos,   $
+           TITLE = win_title
 
 ; Display 1st image as a colored 3-D wire-mesh with "Lego" appearence
-SURFACE, image_1, XTITLE = x_title_1, YTITLE = y_title_1, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, $
-         TITLE = title_1, AZ = 15, CHARSIZE = 2.0, POSITION = [0.05, 0.1, 0.45, 0.9], /LEGO,  $
-         SHADES = BYTSCL(image_1)
+SURFACE, image_1,                                  $
+         XTITLE   = x_title_1, YTITLE = y_title_1, $
+         XSTYLE   = 1,         YSTYLE = 1,         $
+         ZSTYLE   = 1,                             $
+         TITLE    = title_1,                       $
+         AZ       = 15,                            $
+         CHARSIZE = 2.0,                           $
+         POSITION = [0.05, 0.1, 0.45, 0.9],        $
+         SHADES   = BYTSCL(image_1),               $
+         /LEGO
 
+; WTF??
 ; Redraw axes to avoid partial erasing due to wire-mesh  drawing
-SURFACE, image_1, XTITLE = x_title_1, YTITLE = y_title_1, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, $
-         TITLE = title_1, AZ = 15, CHARSIZE = 2.0, POSITION = [0.05, 0.1, 0.45, 0.9], /LEGO,  $
-         SHADES = BYTSCL(image_1), /NOERASE, /NODATA
+
+; SURFACE, image_1, XTITLE = x_title_1, YTITLE = y_title_1, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, $
+;         TITLE = title_1, AZ = 15, CHARSIZE = 2.0, POSITION = [0.05, 0.1, 0.45, 0.9], /LEGO,  $
+;         SHADES = BYTSCL(image_1), /NOERASE, /NODATA
 
 ; Display 2nd image as a colored 3-D wire-mesh with "Lego" appearance
-SURFACE, image_2, XTITLE = x_title_2, YTITLE = y_title_2, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, $
-         TITLE = title_2, AZ = 15, CHARSIZE = 2.0, POSITION = [0.05, 0.1, 0.95, 0.9], /LEGO,  $
-         SHADES = BYTSCL(image_2), /NOERASE
+SURFACE, image_2,                                  $
+         XTITLE   = x_title_2, YTITLE = y_title_2, $
+         XSTYLE   = 1,         YSTYLE = 1,         $
+         ZSTYLE   = 1,                             $
+         TITLE    = title_2,                       $
+         AZ       = 15,                            $
+         CHARSIZE = 2.0,                           $
+         POSITION = [0.05, 0.1, 0.95, 0.9],        $
+         SHADES   = BYTSCL(image_2),               $
+         /LEGO,                                    $
+         /NOERASE
 
+; WTF ??
 ; Redraw axes to avoid partial erasing due to wire-mesh drawing
-SURFACE, image_2, XTITLE = x_title_2, YTITLE = y_title_2, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, $
-         TITLE = title_2, AZ = 15, CHARSIZE = 2.0, POSITION = [0.05, 0.1, 0.45, 0.9], /LEGO,  $
-         SHADES = BYTSCL(image_2), /NOERASE, /NODATA
+;SURFACE, image_2, XTITLE = x_title_2, YTITLE = y_title_2, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, $
+;         TITLE = title_2, AZ = 15, CHARSIZE = 2.0, POSITION = [0.05, 0.1, 0.45, 0.9], /LEGO,  $
+;         SHADES = BYTSCL(image_2), /NOERASE, /NODATA
 
 END

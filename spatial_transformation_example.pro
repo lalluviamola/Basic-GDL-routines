@@ -7,11 +7,7 @@ PRO SPATIAL_TRANSFORMATION_EXAMPLE
 ;
 ; Input:          -
 ; Output:         -
-; External calls: GAUSSIAN_2D           function
-;                 SCREEN_SIZE           procedure
-;                 CENTER_WINDOW_POS     procedure
-;                 VIS_2D                procedure
-;                 VIS_3D                procedure
+; External calls: SPATIAL_TRANSFORMATION
 ; 
 ; Programmer:    Daniel Molina García (based on M. Messerotti's examples)
 ; Creation date: -
@@ -49,14 +45,14 @@ SCREEN_SIZE, x_screen, y_screen
 x_standard_size = FLOOR(0.5 * 0.9 * x_screen)
 y_standard_size = x_standard_size
 
-; Set graphics mode to indexed CT
+; Set graphics mode to indexed COLOR TABLE
 DEVICE, DECOMPOSED = 0
 
-; Load 32-color palette
+; Load color palette
 LOADCT, 39
 
 ; Define an asymetric 2-D Gaussian pseudo-image
-; (Small size helps in emphasizing various aspects
+; (small size helps in emphasizing various aspects
 ;  in the transformed image, which would be smoothed
 ;  out in a large image)
 
@@ -69,7 +65,7 @@ y_size_1 = 64
 sigma_x_1 = x_size_1 / 6
 sigma_y_1 = y_size_1 / 6
 
-; Create the gaussian byte-arry (it is returned really a byte-array!)
+; Create the gaussian byte-array (it is returned really a byte-array!)
 original_image = GAUSSIAN_2D(x_size_1, y_size_1, sigma_x_1, sigma_y_1)
 
 ; Define centered window origin based on window size
@@ -121,6 +117,9 @@ rebin_factor = 4
 ; Undersample the image
 undersampled_image = SPATIAL_TRANSFORMATION(image, /UNDERSAMPLE, REBIN_FACTOR=rebin_factor)
 
+x_size_2 = (SIZE(undersampled_image))[0]
+y_size_2 = (SIZE(undersampled_image))[1]
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 2-D visualization
 
@@ -155,7 +154,12 @@ PRESS_MOUSE
 rebin_factor = 2
 
 ; Oversample the image
-integer_oversampled_image = SPATIAL_TRANSFORMATION(image, /UNDERSAMPLE, REBIN_FACTOR=rebin_factor)
+integer_oversampled_image = SPATIAL_TRANSFORMATION(image, /OVERSAMPLE, REBIN_FACTOR=rebin_factor)
+
+x_size_2 = (SIZE(integer_oversampled_image))[0]
+y_size_2 = (SIZE(integer_oversampled_image))[1]
+
+
 
 ; 2-D Visualization
 
@@ -193,13 +197,16 @@ PRESS_MOUSE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; OVERSAMPLING -- Expand image size by a non-integer factor via
-;                 nearest neighbour pixel attribute assignment
+;                 NEAREST NEIGHBOUR pixel attribute assignment
 
 ; Set rebinning factor (same for both x- and y-axis to
 ;                       preserve image aspect radio)
 rebin_factor = 2.7
 
 real_nearest_oversampled_image = SPATIAL_TRANSFORMATION(image, /UNDERSAMPLE, REBIN_FACTOR=rebin_factor, /NEAREST_NEIGHBOUR)
+
+x_size_2 = (SIZE(real_nearest_oversampled_image))[0]
+y_size_2 = (SIZE(real_nearest_oversampled_image))[1]
 
 
 ; 2-D Visualization
@@ -250,7 +257,11 @@ PRESS_MOUSE
 
 rebin_factor = 2.7
 
-real_interp_oversampled_image = SPATIAL_TRANSFORMATION(image, /UNDERSAMPLE, REBIN_FACTOR=rebin_factor, /BILINEAR_INTERP)
+real_bilinear_oversampled_image = SPATIAL_TRANSFORMATION(image, /UNDERSAMPLE, REBIN_FACTOR=rebin_factor, /BILINEAR)
+
+x_size_2 = (SIZE(real_bilinear_oversampled_image))[0]
+y_size_2 = (SIZE(real_bilinear_oversampled_image))[1]
+
 
 
 ; 2-D Visualization
@@ -274,7 +285,7 @@ y_title_1 = '(pxs)'
 ; Draw 2-D plots
 VIS_2D, x_standard_size, y_standard_size, win_title,                $
         original_image, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        real_interp_oversampled_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
+        real_bilinear_oversampled_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
 
 ; Wait for user-confirmation
 PRESS_MOUSE
@@ -285,7 +296,7 @@ PRESS_MOUSE
 
 VIS_3D, x_standard_size, y_standard_size, win_title,                $
         original_image, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-        real_interp_oversampled_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
+        real_bilinear_oversampled_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
 
 ; Wait for user-confirmation
 PRESS_MOUSE
@@ -296,4 +307,119 @@ PRESS_MOUSE
 ;                             interpolation in pixel attribute assignment
 
 
-; IT MUST BE FINISHED!!!!
+; Set translation offset (pxs)
+trans_values = [ 10, -10]    ; x and y-offset
+
+; Set rotation angle
+theta = -23. * !DTOR ; (radians)
+
+nearest_transrot_image = SPATIAL_TRANSFORMATION(image,                       $
+                                                /TRANSROT,                   $
+                                                TRANS_VALUES = trans_values, $
+                                                ROT_VALUE = theta,           $
+                                                /NEAREST_NEIGHBOUR)
+
+x_size_2 = (SIZE(nearest_transrot_image))[0]
+y_size_2 = (SIZE(nearest_transrot_image))[1]
+
+
+
+; 2-D Visualization
+
+; Define plot labeles
+
+win_title = 'Nearest Neighbour Image Shift and Rotation by Theta = ' $
+            + STRTRIM(STRING(theta * !RADEG), 2) + ' deg'
+
+title_1  = 'Original image: ' + STRTRIM(STRING(x_size_1), 2) + 'x'            $
+           + STRTRIM(STRING(y_size_1), 2) + ' pxs'
+x_title_1 = '(pxs)'
+y_title_1 = '(pxs)'
+
+title_2   = 'Shifted and rotated image: ' + STRTRIM(STRING(x_size_2), 2) + 'x'            $
+           + STRTRIM(STRING(y_size_2), 2) + ' pxs'
+x_title_1 = '(pxs)'
+y_title_1 = '(pxs)'
+
+
+; Draw 2-D plots
+VIS_2D, x_standard_size, y_standard_size, win_title,                               $
+        original_image, x_size_1, y_size_1, title_1, x_title_1, y_title_1,         $
+        nearest_transrot_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
+
+; Wait for user-confirmation
+PRESS_MOUSE
+
+; 3-D Visualization
+
+; Draw 3-D plots
+
+VIS_3D, x_standard_size, y_standard_size, win_title,                               $
+        original_image, x_size_1, y_size_1, title_1, x_title_1, y_title_1,         $
+        nearest_transrot_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
+
+; Wait for user-confirmation
+PRESS_MOUSE
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; TRANSLATION AND ROTATION -- Shift  and rotate an image via bilinear
+;                             interpolation in pixel attribute
+;                             assignment
+
+; Set rotation angle
+theta = -23 * !DTOR             ; (radians)
+trans_values = [10, -10]
+
+bilinear_transrot_image = SPATIAL_TRANSFORMATION(image,                       $
+                                                 /TRANSROT,                   $
+                                                 TRANS_VALUES = trans_values, $
+                                                 ROT_VALUE = theta,           $
+                                                 /BILINEAR)
+
+x_size_2 = (SIZE(bilinear_transrot_image))[0]
+y_size_2 = (SIZE(bilinear_transrot_image))[1]
+
+
+; 2-D Visualization
+
+; Define plot labeles
+
+win_title = 'Bilinear interpolation Image shift and Rotation by Theta = ' $
+            + STRTRIM(STRING(theta * !RADEG), 2) + ' deg'
+
+title_1  = 'Original image: ' + STRTRIM(STRING(x_size_1), 2) + 'x'            $
+           + STRTRIM(STRING(y_size_1), 2) + ' pxs'
+x_title_1 = '(pxs)'
+y_title_1 = '(pxs)'
+
+title_2   = 'Shifted and rotated image: ' + STRTRIM(STRING(x_size_2), 2) + 'x'            $
+           + STRTRIM(STRING(y_size_2), 2) + ' pxs'
+x_title_1 = '(pxs)'
+y_title_1 = '(pxs)'
+
+
+; Draw 2-D plots
+VIS_2D, x_standard_size, y_standard_size, win_title,                $
+        original_image, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
+        bilinear_transrot_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
+
+; Wait for user-confirmation
+PRESS_MOUSE
+
+; 3-D Visualization
+
+; Draw 3-D plots
+
+VIS_3D, x_standard_size, y_standard_size, win_title,                $
+        original_image, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
+        bilinear_transrot_image, x_size_2, y_size_2, title_2, x_title_2, y_title_2, 
+
+; Wait for user-confirmation
+PRESS_MOUSE
+
+WDELETE, 1, 2
+
+END

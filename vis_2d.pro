@@ -4,7 +4,7 @@ PRO VIS_2D, win_x_size, win_y_size, win_title,                           $
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This procedure visualizes 2 arrays in adjacent quadrants of a unique
+; This procedure visualizes 2 BYTE-ARRAYS in adjacent quadrants of a unique
 ; graphic window as colored images
 ;
 ; Input:          win_x_size
@@ -59,12 +59,18 @@ PRO VIS_2D, win_x_size, win_y_size, win_title,                           $
 CENTER_WINDOW_POS, 2 * win_x_size, win_y_size, x_win_pos, y_win_pos
 
 ; Open window
-WINDOW, 1, XSIZE = 2 * win_width, YSIZE = win_height, XPOS = x_win_pos, YPOS = y_win_pos, TITLE = win_title
+WINDOW, 1, XSIZE = 2 * win_width, YSIZE = win_height,  $
+           XPOS  = x_win_pos,     YPOS  = y_win_pos,   $
+           TITLE = win_title
 
 ; Draw axes based on image size in 1st quadrant defined by normalized
-; coordinates [0.05, 0.1, 0.45, 0.9]
-PLOT, FINDGEN(x_size_1), FINDGEN(y_size_1), XSTYLE = 1, YSTYLE = 1, XTITLE = x_title_1, YTITLE = y_title_1, $
-      TITLE = title_1, /NODATA, /NOERASE, POSITION = [0.05, 0.1, 0.45, 0.9]
+; coordinates [0.05, 0.1, 0.45, 0.9] 
+PLOT, FINDGEN(x_size_1), FINDGEN(y_size_1),     $
+      XSTYLE   = 1,         YSTYLE = 1,         $
+      XTITLE   = x_title_1, YTITLE = y_title_1, $
+      TITLE    = title_1,                       $
+      POSITION = [0.05, 0.1, 0.45, 0.9],        $
+      /NODATA, /NOERASE
 
 ; Determine size of plot window as defined by the plot procedure
 ; * !X.WINDOW,  !Y.WINDOW  -- Normalized coordinates of axis end points
@@ -82,17 +88,26 @@ case (SIZE(image_1))[0] of
    2 : TV, CONGRID(BYTSCL(image_1), image_x_size, image_y_size), plot_x_size[0], plot_y_size[0]
 
                                 ; True color image
-   3: TV, CONGRID(image_1, 3, image_x_size, image_y_size), plot_x_size, plot_y_size, /TRUE
+   3 : TV, CONGRID(image_1, 3, image_x_size, image_y_size), plot_x_size, plot_y_size, /TRUE
+
 endcase
 
 ; Redraw axes
-PLOT, FINDGEN(x_size_1), FINDGEN(y_size_1), XSTYLE = 1, YSTYLE = 1, XTITLE = x_title_1, YTITLE = y_title_1, $
-      TITLE = title_1, /NODATA, /NOERASE, POSITION = [0.05, 0.1, 0.45, 0.9]
+PLOT, FINDGEN(x_size_1), FINDGEN(y_size_1),     $
+      XSTYLE   = 1,         YSTYLE = 1,         $
+      XTITLE   = x_title_1, YTITLE = y_title_1, $
+      TITLE    = title_1,                       $
+      POSITION = [0.05, 0.1, 0.45, 0.9],        $
+      /NODATA, /NOERASE
 
 ; Draw axes based on image size in 2nd quadrant defined by normalized
-; coordinates [0.05, 0.1, 0.95, 0.9]
-PLOT, FINDGEN(x_size_2), FINDGEN(y_size_2), XSTYLE = 1, YSTYLE = 1, XTITLE = x_title_2, YTITLE = y_title_2, $
-      TITLE = title_2, /NODATA, /NOERASE, POSITION = [0.05, 0.1, 0.95, 0.9]
+; coordinates [0.55, 0.1, 0.95, 0.9]
+PLOT, FINDGEN(x_size_2), FINDGEN(y_size_2),     $
+      XSTYLE   = 1,         YSTYLE = 1,         $
+      XTITLE   = x_title_2, YTITLE = y_title_2, $
+      TITLE    = title_2,                       $
+      POSITION = [0.55, 0.1, 0.95, 0.9],        $
+      /NODATA, /NOERASE 
 
 ; Determine size of plot window as defined by the plot procedure
 ; * !X.WINDOW,  !Y.WINDOW  -- Normalized coordinates of axis end points
@@ -110,11 +125,15 @@ case (SIZE(image_2))[0] of
    2 : TV, CONGRID(BYTSCL(image_2), image_x_size, image_y_size), plot_x_size[0], plot_y_size[0]
 
                                 ; True color image
-   3: TV, CONGRID(image_2, 3, image_x_size, image_y_size), plot_x_size, plot_y_size, /TRUE
+   3 : TV, CONGRID(image_2, 3, image_x_size, image_y_size), plot_x_size, plot_y_size, /TRUE
 endcase
 
 ; Redraw axes
-PLOT, FINDGEN(x_size_2), FINDGEN(y_size_2), XSTYLE = 1, YSTYLE = 1, XTITLE = x_title_2, YTITLE = y_title_2, $
-      TITLE = title_2, /NODATA, /NOERASE, POSITION = [0.05, 0.1, 0.95, 0.9]
+PLOT, FINDGEN(x_size_2), FINDGEN(y_size_2),     $
+      XSTYLE   = 1,         YSTYLE = 1,         $
+      XTITLE   = x_title_2, YTITLE = y_title_2, $
+      TITLE    = title_2,                       $
+      POSITION = [0.55, 0.1, 0.95, 0.9],        $
+      /NODATA, /NOERASE 
 
 END
