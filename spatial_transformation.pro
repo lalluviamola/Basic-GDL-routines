@@ -11,14 +11,12 @@ FUNCTION SPATIAL_TRANSFORMATION, image_in,                                $
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; This function realizes one of the following spatial transformations
+; in both grayscale and true-color images
 ;     
 ;     * Undersampling
 ;     * Oversampling
 ;     * Rotation
 ;     * Translation (Shift)
-;
-; WARNING: Currently it only works with GRAYSCALE IMAGES.
-;
 ;
 ;
 ; Input:          image_in
@@ -148,13 +146,28 @@ if N_ELEMENTS(bilinear)          eq 0 then bilinear          = 0
 if N_ELEMENTS(rot_value)         eq 0 then rot_value         = 0
 if N_ELEMENTS(trans_values)      eq 0 then transvalues       = [0, 0]
 
-
 ; START
 
 
 ; Get dimensions of image
 x_size_in = (SIZE(image_in, /DIMENSIONS))[0]
 y_size_in = (SIZE(image_in, /DIMENSIONS))[1]
+
+case (SIZE(image_in))[0] of
+
+   2    : true = 0
+   3    : true = 1
+   else : begin
+
+      MESSAGE, 'Not ready for handling arrays of more than 3 dimmensions.'
+      return, 1
+
+   end
+
+endcase
+
+; Let's define a zero variable for avoiding IF statments inside loops
+;if true then zero = [0., 0., 0.] else zero = 0.   
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; INTEGER UNDERSAMPLING -- Reduce image size by an integer factor
@@ -164,7 +177,7 @@ y_size_in = (SIZE(image_in, /DIMENSIONS))[1]
 if undersample then begin
 
    ; Check if rebin_factor is not integer
-   if rebin_factor ne FIX(rebin_factor)  then begin
+   if rebin_factor ne FIX(rebin_factor) then begin
 
       MESSAGE, 'Not-integer undersampling is not coded yet. :('
       return, 1
@@ -179,37 +192,75 @@ if undersample then begin
    x_size_out = FLOOR(x_size_in / rebin_factor)
    y_size_out = FLOOR(y_size_in / rebin_factor)
 
-   image_out  = BYTARR(x_size_out, y_size_out)
+                                ; Construct image container depending
+                                ; if input image is true-color or not
+   if true $
+   then image_out = BYTARR(3, x_size_out, y_size_out) $
+   else image_out = BYTARR(   x_size_out, y_size_out)
+
+   ; Diferents loops depending of image type for improving eficiency
+   if true then begin
 
    ; Scan rebinned image
-   for x2 = 0, x_size_out - 1 do begin
-      for y2 = 0, y_size_out - 1 do begin
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
          
          ; Reset summation buffer
-         sum = 0.
-
+            sum = [0., 0., 0.]
                                 ; Sum pixel attributes of original
                                 ; image in a square window
                                 ; of size (rebin_factor) 
                                 ; Probably this loop doesn't
                                 ; look into last pixels of original
                                 ; image
-         for x1 = x2 * rebin_factor, (x2 + 1) * rebin_factor - 1 do begin
-            for y1 = y2 * rebin_factor, (y2 + 1) * rebin_factor - 1 do begin
+            for x1 = x2 * rebin_factor, (x2 + 1) * rebin_factor - 1 do begin
+               for y1 = y2 * rebin_factor, (y2 + 1) * rebin_factor - 1 do begin
             
-               sum = sum + image_in[x1, y1]
+                  sum = sum + image_in[*, x1, y1]
 
+               endfor
             endfor
-         endfor
                                 ; Assign the mean of the pixel
                                 ; attributes in the window
                                 ; to the transformated pixel in the
                                 ; rebinned image
-         image_out[x2, y2] = sum / rebin_factor^2
+            image_out[*, x2, y2] = sum / rebin_factor^2
 
+         endfor
       endfor
-   endfor
 
+   ; If monochrome image
+   endif else begin
+
+   ; Scan rebinned image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
+         
+         ; Reset summation buffer
+            sum = 0.
+                                ; Sum pixel attributes of original
+                                ; image in a square window
+                                ; of size (rebin_factor) 
+                                ; Probably this loop doesn't
+                                ; look into last pixels of original
+                                ; image
+            for x1 = x2 * rebin_factor, (x2 + 1) * rebin_factor - 1 do begin
+               for y1 = y2 * rebin_factor, (y2 + 1) * rebin_factor - 1 do begin
+            
+                  sum = sum + image_in[x1, y1]
+
+               endfor
+            endfor
+                                ; Assign the mean of the pixel
+                                ; attributes in the window
+                                ; to the transformated pixel in the
+                                ; rebinned image
+            image_out[x2, y2] = sum / rebin_factor^2
+
+         endfor
+      endfor
+
+   endelse
    return, image_out
 
 endif
@@ -232,17 +283,21 @@ if ( oversample and (rebin_factor eq FIX(rebin_factor)) ) then begin
    y_size_out = y_size_in * rebin_factor
 
 ; Create byte-type array to store rebinned image
-   image_out = BYTARR(x_size_out, y_size_out)
+   if true $
+   then image_out = BYTARR(3, x_size_out, y_size_out) $
+   else image_out = BYTARR(   x_size_out, y_size_out)
+   
+   ; Diferents loops depending of image type for improving eficiency
+   if true then begin
 
-
-; Scan rebinned image
+   ; Scan rebinned image
 
                                 ; Pixel attributes in original image
                                 ; are replicated in rebinned image a
                                 ; number of times defined by the
                                 ; rebinning factor
-   for x2 = 0, x_size_out - 1 do begin
-      for y2 = 0, y_size_out - 1 do begin
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
 
                                 ; It is done as an integer division:
                                 ;   From 0/rebin_factor
@@ -254,13 +309,25 @@ if ( oversample and (rebin_factor eq FIX(rebin_factor)) ) then begin
                                 ; Idem for the rest of pixels OF
                                 ; rebbinned image.
                                 ; So, integer division does the job.
-         image_out[x2, y2] = image_in[x2 / rebin_factor, y2 / rebin_factor]
+            image_out[*, x2, y2] = image_in[*, x2 / rebin_factor, y2 / rebin_factor]
 
+         endfor
       endfor
-   endfor
+
+   ; If monochrome
+   endif else begin
+
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
+
+            image_out[x2, y2] = image_in[x2 / rebin_factor, y2 / rebin_factor]
+
+         endfor
+      endfor      
+
+   endelse
 
 endif
-
 
 
 
@@ -277,13 +344,21 @@ if   oversample                            and $
    x_size_out = ROUND(x_size_in * rebin_factor)
    y_size_out = ROUND(y_size_in * rebin_factor)
 
-; Create byte-type array to store rebinned image
-   image_out = BYTARR(x_size_out, y_size_out)
+                                ; Construct image container depending
+                                ; if input image is true-color or not
+   if true $
+   then image_out = BYTARR(3, x_size_out, y_size_out) $
+   else image_out = BYTARR(   x_size_out, y_size_out)
+
+
 ; Rebin image
 
-; Scan rebinned image
-   for x2 = 0, x_size_out - 1 do begin
-      for y2 = 0, y_size_out - 1 do begin
+   ; Diferents loops depending of image type for improving eficiency
+   if true then begin
+
+   ; Scan rebinned image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
             
                                 ; Pixel attributes in original image
                                 ; are replicated in rebinned image a
@@ -294,23 +369,55 @@ if   oversample                            and $
 
                                 ; This time rebin_factor is a float,
                                 ; so division doesn't trunk the result
-         x1 = ROUND(x2 / rebin_factor)
-         y1 = ROUND(y2 / rebin_factor)
+            x1 = ROUND(x2 / rebin_factor)
+            y1 = ROUND(y2 / rebin_factor)
 
                                 ; Now we need to control that we are
                                 ; not over-riding the scanning of
                                 ; original image..      
-         if ( x1 gt 0 ) and ( x1 le (x_size_in - 1) ) and $
-            ( y1 ge 0 ) and ( y1 le (y_size_in - 1) )     $
+            if ( x1 gt 0 ) and ( x1 le (x_size_in - 1) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_in - 1) )     $
             
-         then image_out[x2, y2] = image_in[x1, y1]        $
-         else image_out[x2, y2] = 0
+            then image_out[*, x2, y2] = image_in[*, x1, y1]  $
+            else image_out[*, x2, y2] = [0., 0., 0.]
 
+         endfor
       endfor
-   endfor
+
+   ; If monochrome
+   endif else begin
+
+   ; Scan rebinned image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
+            
+                                ; Pixel attributes in original image
+                                ; are replicated in rebinned image a
+                                ; number of times defined by the
+                                ; rebinning factor and pixel adresses
+                                ; are ROUNDed  to the nearest integer
+                                ; (nearest neighbour approximation)
+
+                                ; This time rebin_factor is a float,
+                                ; so division doesn't trunk the result
+            x1 = ROUND(x2 / rebin_factor)
+            y1 = ROUND(y2 / rebin_factor)
+
+                                ; Now we need to control that we are
+                                ; not over-riding the scanning of
+                                ; original image..      
+            if ( x1 gt 0 ) and ( x1 le (x_size_in - 1) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_in - 1) )     $
+            
+            then image_out[x2, y2] = image_in[x1, y1]        $
+            else image_out[x2, y2] = 0.
+
+         endfor
+      endfor
+
+   endelse
 
 endif
-
 
 
 
@@ -333,14 +440,20 @@ if (   oversample                           and $
    x_size_out = ROUND(x_size_in * rebin_factor)
    y_size_out = ROUND(y_size_in * rebin_factor)
    
-; Create byte-type array to store rebinned image
-   image_out = BYTARR(x_size_out, x_size_out)
+                                ; Construct image container depending
+                                ; if input image is true-color or not
+   if true $
+   then image_out = BYTARR(3, x_size_out, y_size_out) $
+   else image_out = BYTARR(   x_size_out, y_size_out)
 
 ; Rebin image
 
-; Scan rebinned image
-   for x2 = 0, x_size_out - 1 do begin
-      for y2 = 0, y_size_out - 1 do begin
+   ; Diferents loops depending of image type for improving eficiency
+   if true then begin
+
+   ; Scan rebinned image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
             
                                 ; Pixel attributes in original image
                                 ; are replicated in rebinned image a
@@ -351,16 +464,16 @@ if (   oversample                           and $
 
                                 ; Derive (floating) pixel address in
                                 ; rebinned image
-         x = x2 / rebin_factor
-         y = y2 / rebin_factor
+            x1 = x2 / rebin_factor
+            y1 = y2 / rebin_factor
       
                                 ; Extract integer part of pixel address
-         xi = FLOOR(x)
-         yi = FLOOR(y)
+            xi = FLOOR(x1)
+            yi = FLOOR(y1)
 
                                 ; Extract fractional part of pixel address
-         xf = x - xi
-         yf = y - yi
+            xf = x1 - xi
+            yf = y1 - yi
 
                                 ; If pixel address in original image
                                 ; does not exceed image range.
@@ -368,35 +481,72 @@ if (   oversample                           and $
                                 ; This time we work with an aditional
                                 ; pixel, so we restrict scanning one
                                 ; more pixel.
-         if ( x1 ge 0 ) and ( x1 le (x_size_out - 2) ) and $
-            ( y1 ge 0 ) and ( y1 le (y_size_out - 2) ) then begin
+            if ( x1 ge 0 ) and ( x1 le (x_size_out - 2) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_out - 2) ) then begin
 
                                 ; Compute bilineal interpolation
                                 ; coefficients from original image
                                 ; pixel attributes
-            c1 = image_in[xi    , yi    ]
-            c2 = image_in[xi    , yi + 1]
-            c3 = image_in[xi + 1, yi    ]
-            c3 = image_in[xi + 1, yi + 1]
+               c1 = image_in[*, xi    , yi    ]
+               c2 = image_in[*, xi    , yi + 1]
+               c3 = image_in[*, xi + 1, yi    ]
+               c3 = image_in[*, xi + 1, yi + 1]
          
                                 ; Apply bilineal interpolation formula
                                 ; to define the pixel attribute in
                                 ; rebinned image as interpolation of
                                 ; pixel attributes in original image
-            image_out[x2, y2] = c1 * (1 - xf) * (1 - yf) $
-                              + c2 * (1 - xf) *    yf    $
-                              + c3 *    xf    * (1 - yf) $
-                              + c4 *    xf    *    yf
-         endif else $
+               image_out[*, x2, y2] = c1 * (1 - xf) * (1 - yf) $
+                                    + c2 * (1 - xf) *    yf    $
+                                    + c3 *    xf    * (1 - yf) $
+                                    + c4 *    xf    *    yf
+            endif else $
 
                                 ; Pixel addres in original image
                                 ; exceeds allowed range:
                                 ; -- set pixel attribute in rebinned
                                 ; image to zero
-            image_out[x2, y2] = 0
+               image_out[*, x2, y2] = [0., 0., 0.]
             
+         endfor
       endfor
-   endfor
+
+   ; If monochrome   
+   endif else begin
+
+   ; Scan rebinned image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
+
+            x1 = x2 / rebin_factor
+            y1 = y2 / rebin_factor
+      
+            xi = FLOOR(x1)
+            yi = FLOOR(y1)
+
+            xf = x1 - xi
+            yf = y1 - yi
+
+            if ( x1 ge 0 ) and ( x1 le (x_size_out - 2) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_out - 2) ) then begin
+
+               c1 = image_in[xi    , yi    ]
+               c2 = image_in[xi    , yi + 1]
+               c3 = image_in[xi + 1, yi    ]
+               c3 = image_in[xi + 1, yi + 1]
+         
+               image_out[x2, y2] = c1 * (1 - xf) * (1 - yf) $
+                                 + c2 * (1 - xf) *    yf    $
+                                 + c3 *    xf    * (1 - yf) $
+                                 + c4 *    xf    *    yf
+            endif else $
+
+               image_out[x2, y2] = 0.
+            
+         endfor
+      endfor
+
+   endelse
       
 endif
 
@@ -422,8 +572,11 @@ if transrot and nearest_neighbour then begin
    x_size_out = x_size_in
    y_size_out = y_size_in
 
-; Create byte-type array to store rebinned image
-   image_out = BYTARR(x_size_out, y_size_out)
+                                ; Construct image container depending
+                                ; if input image is true-color or not
+   if true $
+   then image_out = BYTARR(3, x_size_out, y_size_out) $
+   else image_out = BYTARR(   x_size_out, y_size_out)
 
 ; Derive original image center
    x_center_in = x_size_in / 2
@@ -431,9 +584,12 @@ if transrot and nearest_neighbour then begin
 
 ; Rotate image
 
+   ; Diferents loops depending of image type for improving eficiency
+   if true then begin
+
 ; Scan rotated image
-   for x2 = 0, x_size_out - 1 do begin
-      for y2 = 0, y_size_out - 1 do begin
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
 
                                 ; Image is shifted by (delta_x,
                                 ; delta_y) and rotated by (theta)
@@ -444,26 +600,65 @@ if transrot and nearest_neighbour then begin
                                 ; Derive (floating) pixel address in
                                 ; rotated image by applying inverse transformation
 
-         x1 = ROUND(x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta)
-         y1 = ROUND(y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta)
+            x1 = ROUND(x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta)
+            y1 = ROUND(y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta)
 
 
-         if ( x1 ge 0 ) and ( x1 le (x_size_in - 2) ) and  $
-            ( x1 ge 0 ) and ( y1 le (y_size_in - 2) )      $
+            if ( x1 ge 0 ) and ( x1 le (x_size_in - 2) ) and  $
+               ( x1 ge 0 ) and ( y1 le (y_size_in - 2) )      $
 
                                 ; Assign pixel attribute as
                                 ; correspondent one in original image
-         then image_out[x2, y2] = image_in[x1, y1] $
+            then image_out[*, x2, y2] = image_in[*, x1, y1] $
 
 
                                 ; Pixel address in original  image
                                 ; exceeds allowed range.
                                 ; Set pixel attribute in rotated image
                                 ; to zero
-         else image_out[x2, y2] = 0
+            else image_out[*, x2, y2] = [0., 0., 0.]
 
+         endfor
       endfor
-   endfor
+
+   ; If monochrome image
+   endif else begin
+
+; Scan rotated image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
+
+                                ; Image is shifted by (delta_x,
+                                ; delta_y) and rotated by (theta)
+                                ; around its center. Nearest neighbour
+                                ; approximation is used in new image
+                                ; pixel attribute assignment
+
+                                ; Derive (floating) pixel address in
+                                ; rotated image by applying inverse transformation
+
+            x1 = ROUND(x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta)
+            y1 = ROUND(y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta)
+
+
+            if ( x1 ge 0 ) and ( x1 le (x_size_in - 2) ) and  $
+               ( x1 ge 0 ) and ( y1 le (y_size_in - 2) )      $
+
+                                ; Assign pixel attribute as
+                                ; correspondent one in original image
+            then image_out[x2, y2] = image_in[x1, y1] $
+
+
+                                ; Pixel address in original  image
+                                ; exceeds allowed range.
+                                ; Set pixel attribute in rotated image
+                                ; to zero
+            else image_out[x2, y2] = 0.
+
+         endfor
+      endfor
+
+   endelse
 
 endif
 
@@ -491,14 +686,20 @@ if transrot and bilinear then begin
    x_size_out = x_size_in
    y_size_out = y_size_in
 
-; Create byte-type array to store rebinned image
-   image_out = BYTARR(x_size_out, y_size_out)
+                                ; Construct image container depending
+                                ; if input image is true-color or not
+   if true $
+   then image_out = BYTARR(3, x_size_out, y_size_out) $
+   else image_out = BYTARR(   x_size_out, y_size_out)
 
 ; Rotate image
 
-; Scan rotated image
-   for x2 = 0, x_size_out - 1 do begin
-      for y2 = 0, y_size_out - 1 do begin
+   ; Diferents loops depending of image type for improving eficiency
+   if true then begin
+
+      ; Scan rotated image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
 
                                 ; Image is shifted by (delta_x,
                                 ; delta_y) and rotated by (theta)
@@ -508,46 +709,104 @@ if transrot and bilinear then begin
 
                                 ; Derive (floating) pixel address in
                                 ; rotated image by applying inverse transformation
-         x1 = x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta
-         y1 = y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta
+            x1 = x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta
+            y1 = y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta
 
                                 ; Extract integer part of pixel
                                 ; address
-         xi = FLOOR(x)
-         yi = FLOOR(y)
+            xi = FLOOR(x1)
+            yi = FLOOR(y1)
 
                                 ; Extract fractional part of pixel
                                 ; address
-         xf = x - xi
-         yf = y - yi
+            xf = x1 - xi
+            yf = y1 - yi
 
 
                                 ; Pixel address in original image
                                 ; does not exceed image range
-         if ( x1 gt 0 ) and ( x1 le (x_size_in - 2) ) and $
-            ( y1 ge 0 ) and ( y1 le (y_size_in - 2) ) then begin
+            if ( x1 gt 0 ) and ( x1 le (x_size_in - 2) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_in - 2) ) then begin
 
                                 ; Apply binlinear interpolation
                                 ; formula to define the pisel
                                 ; attribute in rotated image as
                                 ; interpolation of pixel attributes in
                                 ; original image
-            image_out[x2, y2] = c1 * (1 - xf) * (1 - yf) $
-                              + c2 * (1 - xf) *    yf    $
-                              + c3 *    xf    * (1 - yf) $
-                              + c4 *    xf    *    yf
+               image_out[*, x2, y2] = c1 * (1 - xf) * (1 - yf) $
+                                    + c2 * (1 - xf) *    yf    $
+                                    + c3 *    xf    * (1 - yf) $
+                                    + c4 *    xf    *    yf
 
 
 
-         endif else $
+            endif else $
                                 ; Pixel address in original  image
                                 ; exceeds allowed range.
                                 ; Set pixel attribute in rotated image
                                 ; to zero
-            image_out[x2, y2] = 0
+               image_out[*, x2, y2] = [.0, 0., 0.] 
 
+         endfor
       endfor
-   endfor
+
+   ; If monochrome image
+   endif else begin
+
+      ; Scan rotated image
+      for x2 = 0, x_size_out - 1 do begin
+         for y2 = 0, y_size_out - 1 do begin
+
+                                ; Image is shifted by (delta_x,
+                                ; delta_y) and rotated by (theta)
+                                ; around its center. Bilinear
+                                ; interpolation is used in new image
+                                ; pixel attribute assignment
+
+                                ; Derive (floating) pixel address in
+                                ; rotated image by applying inverse transformation
+            x1 = x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta
+            y1 = y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta
+
+                                ; Extract integer part of pixel
+                                ; address
+            xi = FLOOR(x1)
+            yi = FLOOR(y1)
+
+                                ; Extract fractional part of pixel
+                                ; address
+            xf = x1 - xi
+            yf = y1 - yi
+
+
+                                ; Pixel address in original image
+                                ; does not exceed image range
+            if ( x1 gt 0 ) and ( x1 le (x_size_in - 2) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_in - 2) ) then begin
+
+                                ; Apply binlinear interpolation
+                                ; formula to define the pisel
+                                ; attribute in rotated image as
+                                ; interpolation of pixel attributes in
+                                ; original image
+               image_out[x2, y2] = c1 * (1 - xf) * (1 - yf) $
+                                 + c2 * (1 - xf) *    yf    $
+                                 + c3 *    xf    * (1 - yf) $
+                                 + c4 *    xf    *    yf
+
+
+
+            endif else $
+                                ; Pixel address in original  image
+                                ; exceeds allowed range.
+                                ; Set pixel attribute in rotated image
+                                ; to zero
+               image_out[x2, y2] = 0
+
+         endfor
+      endfor
+
+   endelse
 
 endif
 
