@@ -1,6 +1,10 @@
-PRO VIS_2D, win_x_size, win_y_size, win_title,                           $
-            image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-            image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2
+PRO VIS_2D, image_1, image_2,                       $
+            win_x_size, win_y_size,                 $
+            win_title,                              $
+            title_1,                                $
+            x_title_1, y_title_1,                   $
+            title_2,                                $
+            x_title_2, y_title_2
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -11,14 +15,10 @@ PRO VIS_2D, win_x_size, win_y_size, win_title,                           $
 ;                 win_y_size
 ;                 win_title
 ;                 image_1
-;                 x_size_1      x-size of 1st image
-;                 y_size_1      y-size of 1st image
 ;                 title_1
 ;                 x_title_1
 ;                 y_title_1
 ;                 image_2
-;                 x_size_2      x-size of 2nd image
-;                 y_size_2      y-size of 2nd image
 ;                 title_2
 ;                 x_title_2
 ;                 y_title_2
@@ -53,14 +53,18 @@ PRO VIS_2D, win_x_size, win_y_size, win_title,                           $
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; 2-D Visualization
+; Calculate sizes of images
+x_size_1 = (SIZE(image_1, /DIMENSIONS))[0]
+y_size_1 = (SIZE(image_1, /DIMENSIONS))[1]
+x_size_2 = (SIZE(image_2, /DIMENSIONS))[0]
+y_size_2 = (SIZE(image_2, /DIMENSIONS))[1]
 
 ; Define centered window origin based on window size
 CENTER_WINDOW_POS, 2 * win_x_size, win_y_size, x_win_pos, y_win_pos
 
 ; Open window
-WINDOW, 1, XSIZE = 2 * win_width, YSIZE = win_height,  $
-           XPOS  = x_win_pos,     YPOS  = y_win_pos,   $
+WINDOW, 1, XSIZE = 2 * win_x_size, YSIZE = win_y_size,  $
+           XPOS  = x_win_pos,      YPOS  = y_win_pos,   $
            TITLE = win_title
 
 ; Draw axes based on image size in 1st quadrant defined by normalized
@@ -88,7 +92,7 @@ case (SIZE(image_1))[0] of
    2 : TV, CONGRID(BYTSCL(image_1), image_x_size, image_y_size), plot_x_size[0], plot_y_size[0]
 
                                 ; True color image
-   3 : TV, CONGRID(image_1, 3, image_x_size, image_y_size), plot_x_size, plot_y_size, /TRUE
+   3 : TV, CONGRID(image_1, 3, image_x_size, image_y_size), plot_x_size[0], plot_y_size[0], /TRUE
 
 endcase
 
@@ -125,7 +129,7 @@ case (SIZE(image_2))[0] of
    2 : TV, CONGRID(BYTSCL(image_2), image_x_size, image_y_size), plot_x_size[0], plot_y_size[0]
 
                                 ; True color image
-   3 : TV, CONGRID(image_2, 3, image_x_size, image_y_size), plot_x_size, plot_y_size, /TRUE
+   3 : TV, CONGRID(image_2, 3, image_x_size, image_y_size), plot_x_size[0], plot_y_size[0], /TRUE
 endcase
 
 ; Redraw axes

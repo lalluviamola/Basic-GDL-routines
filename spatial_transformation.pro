@@ -81,10 +81,19 @@ FUNCTION SPATIAL_TRANSFORMATION, image_in,                                $
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; Define variables not passed as KEYWORDS
+if N_ELEMENTS(undersample)       eq 0 then undersample       = 0
+if N_ELEMENTS(oversample)        eq 0 then oversample        = 0
+if N_ELEMENTS(transrot)          eq 0 then transrot          = 0
+if N_ELEMENTS(nearest_neighbour) eq 0 then nearest_neighbour = 0
+if N_ELEMENTS(bilinear)          eq 0 then bilinear          = 0
+if N_ELEMENTS(rot_value)         eq 0 then rot_value         = 0
+if N_ELEMENTS(trans_values)      eq 0 then transvalues       = [0, 0]
+
 ; Check that any operation will be executed
-if (N_ELEMENTS(undersample) eq 0) and $
-   (N_ELEMENTS(oversample)  eq 0) and $
-   (N_ELEMENTS(transrot)    eq 0) then begin
+if (undersample eq 0) && $
+   (oversample  eq 0) && $
+   (transrot    eq 0) then begin
 
    MESSAGE, 'No valid operation selected: UNDERSAMPLE, OVERSAMPLE, TRANSROT'
    return, 1
@@ -92,14 +101,15 @@ if (N_ELEMENTS(undersample) eq 0) and $
 endif
 
 ; Let only one operation at the same time
-if ((N_ELEMENTS(undersample) ne 0) and (N_ELEMENTS(oversample) ne 0)) or $
-   ((N_ELEMENTS(undersample) ne 0) and (N_ELEMENTS(transrot)   ne 0)) or $
-   ((N_ELEMENTS(oversample)  ne 0) and (N_ELEMENTS(transrot)   ne 0)) then begin
+if (undersample ne 0) && (oversample ne 0) || $
+   (undersample ne 0) && (transrot   ne 0) || $
+   (oversample  ne 0) && (transrot   ne 0) then begin
 
    MESSAGE, 'Only one operation can be selected at a time'
    return, 1
 
 endif
+
 
 ; Force definition of rebining_factor and a correct value
 if undersample or oversample then begin
@@ -118,8 +128,8 @@ if undersample or oversample then begin
 endif
 
 ; Avoids selection of both included methods of doing calcs at a time
-if (N_ELEMENTS(nearest_neighbour) ne 0) and $
-   (N_ELEMENTS(bilinear)          ne 0) then begin
+if (nearest_neighbour ne 0) && $
+   (bilinear          ne 0) then begin
 
    MESSAGE, 'NEAREST_NEIGHBOUR and BILINEAR keywords are exclusive. Use only one of them at a time.'
    return, 1
@@ -127,24 +137,17 @@ if (N_ELEMENTS(nearest_neighbour) ne 0) and $
 endif
  
 ; Force specification of a METHOD_KEYWORD if needed
-if trans_rot or ( oversample and (FIX(rebin_factor)) ne rebin_factor ) then begin
+; The || is neccesary here for avoid next evaluations if the first one
+; is true
+if transrot || ( oversample && ( FIX(rebin_factor)) ne rebin_factor ) then begin
 
-   if ( (N_ELEMENTS(bilinear) eq 0) and (N_ELEMENTS(nearest_neighbour) eq 0) ) then begin
+   if (bilinear eq 0) && (nearest_neighbour eq 0) then begin
 
       MESSAGE, 'INTERP or NEAREST_NEIGHBOUR must be indicated.'
       return, 1
    endif
 
 endif
-
-; Define variables not passed as KEYWORDS
-if N_ELEMENTS(undersample)       eq 0 then undersample       = 0
-if N_ELEMENTS(oversample)        eq 0 then oversample        = 0
-if N_ELEMENTS(transrot)          eq 0 then transrot          = 0
-if N_ELEMENTS(nearest_neighbour) eq 0 then nearest_neighbour = 0
-if N_ELEMENTS(bilinear)          eq 0 then bilinear          = 0
-if N_ELEMENTS(rot_value)         eq 0 then rot_value         = 0
-if N_ELEMENTS(trans_values)      eq 0 then transvalues       = [0, 0]
 
 ; START
 
@@ -179,7 +182,7 @@ if undersample then begin
    ; Check if rebin_factor is not integer
    if rebin_factor ne FIX(rebin_factor) then begin
 
-      MESSAGE, 'Not-integer undersampling is not coded yet. :('
+      MESSAGE, 'Non-integer undersampling is not coded yet. :('
       return, 1
 
    endif
@@ -270,7 +273,7 @@ endif
 ; INTEGER OVERSAMPLING -- Expand image size by an integer factor
 
 ; Check that it is an integer factor
-if ( oversample and (rebin_factor eq FIX(rebin_factor)) ) then begin
+if ( oversample && (rebin_factor eq FIX(rebin_factor)) ) then begin
 
 ; Derive size of rebinned image
                                 ; SIZE OF REBBINED IMAGE (preserves
@@ -336,8 +339,8 @@ endif
 ; OVERSAMPLING -- Expand image size by a NON-INTEGER factor via
 ;                 NEAREST NEIGHBOUR pixel attribute assignment
 
-if   oversample                            and $
-   ( rebin_factor ne FIX(rebin_factor) )   and $
+if   oversample                            && $
+   ( rebin_factor ne FIX(rebin_factor) )   && $
      nearest_neighbour                     then begin
 
 ; Derive size of rebinned image
@@ -430,9 +433,9 @@ endif
 ;                 BILINEAR INTERPOLATION in pixel attribute
 ;                 assignment
 
-if (   oversample                           and $
-     ( rebin_factor ne FIX(rebin_factor) )  and $
-       bilinear                                 $
+if (   oversample                           && $
+     ( rebin_factor ne FIX(rebin_factor) )  && $
+       bilinear                                $
    ) then begin
 
 
@@ -481,8 +484,8 @@ if (   oversample                           and $
                                 ; This time we work with an aditional
                                 ; pixel, so we restrict scanning one
                                 ; more pixel.
-            if ( x1 ge 0 ) and ( x1 le (x_size_out - 2) ) and $
-               ( y1 ge 0 ) and ( y1 le (y_size_out - 2) ) then begin
+            if ( x1 ge 0 ) and ( x1 le (x_size_in - 2) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_in - 2) ) then begin
 
                                 ; Compute bilineal interpolation
                                 ; coefficients from original image
@@ -490,7 +493,7 @@ if (   oversample                           and $
                c1 = image_in[*, xi    , yi    ]
                c2 = image_in[*, xi    , yi + 1]
                c3 = image_in[*, xi + 1, yi    ]
-               c3 = image_in[*, xi + 1, yi + 1]
+               c4 = image_in[*, xi + 1, yi + 1]
          
                                 ; Apply bilineal interpolation formula
                                 ; to define the pixel attribute in
@@ -527,13 +530,13 @@ if (   oversample                           and $
             xf = x1 - xi
             yf = y1 - yi
 
-            if ( x1 ge 0 ) and ( x1 le (x_size_out - 2) ) and $
-               ( y1 ge 0 ) and ( y1 le (y_size_out - 2) ) then begin
+            if ( x1 ge 0 ) and ( x1 le (x_size_in - 2) ) and $
+               ( y1 ge 0 ) and ( y1 le (y_size_in - 2) ) then begin
 
                c1 = image_in[xi    , yi    ]
                c2 = image_in[xi    , yi + 1]
                c3 = image_in[xi + 1, yi    ]
-               c3 = image_in[xi + 1, yi + 1]
+               c4 = image_in[xi + 1, yi + 1]
          
                image_out[x2, y2] = c1 * (1 - xf) * (1 - yf) $
                                  + c2 * (1 - xf) *    yf    $
@@ -558,7 +561,7 @@ endif
 ;                             interpolation in pixel attribute assignment
 
 
-if transrot and nearest_neighbour then begin
+if transrot && nearest_neighbour then begin
 
 ; Defined angular constants to minimize computations
    sin_theta = SIN(rot_value)
@@ -600,8 +603,8 @@ if transrot and nearest_neighbour then begin
                                 ; Derive (floating) pixel address in
                                 ; rotated image by applying inverse transformation
 
-            x1 = ROUND(x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta)
-            y1 = ROUND(y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta)
+            x1 = ROUND(x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - y_center_in - delta_y) * sin_theta)
+            y1 = ROUND(y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - y_center_in - delta_y) * cos_theta)
 
 
             if ( x1 ge 0 ) and ( x1 le (x_size_in - 2) ) and  $
@@ -637,8 +640,8 @@ if transrot and nearest_neighbour then begin
                                 ; Derive (floating) pixel address in
                                 ; rotated image by applying inverse transformation
 
-            x1 = ROUND(x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta)
-            y1 = ROUND(y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta)
+            x1 = ROUND(x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - y_center_in - delta_y) * sin_theta)
+            y1 = ROUND(y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - y_center_in - delta_y) * cos_theta)
 
 
             if ( x1 ge 0 ) and ( x1 le (x_size_in - 2) ) and  $
@@ -667,7 +670,7 @@ endif
 ;                             interpolation in pixel attribute
 ;                             assignment
 
-if transrot and bilinear then begin
+if transrot && bilinear then begin
 
 
 ; Redifine translation offset (pxs)
@@ -709,8 +712,8 @@ if transrot and bilinear then begin
 
                                 ; Derive (floating) pixel address in
                                 ; rotated image by applying inverse transformation
-            x1 = x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta
-            y1 = y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta
+            x1 = x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - y_center_in - delta_y) * sin_theta
+            y1 = y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - y_center_in - delta_y) * cos_theta
 
                                 ; Extract integer part of pixel
                                 ; address
@@ -728,6 +731,11 @@ if transrot and bilinear then begin
             if ( x1 gt 0 ) and ( x1 le (x_size_in - 2) ) and $
                ( y1 ge 0 ) and ( y1 le (y_size_in - 2) ) then begin
 
+               c1 = image_in[*, xi    , yi    ]
+               c2 = image_in[*, xi    , yi + 1]
+               c3 = image_in[*, xi + 1, yi    ]
+               c4 = image_in[*, xi + 1, yi + 1]
+               
                                 ; Apply binlinear interpolation
                                 ; formula to define the pisel
                                 ; attribute in rotated image as
@@ -765,8 +773,8 @@ if transrot and bilinear then begin
 
                                 ; Derive (floating) pixel address in
                                 ; rotated image by applying inverse transformation
-            x1 = x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - yc - delta_y) * sin_theta
-            y1 = y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - yc - delta_y) * cos_theta
+            x1 = x_center_in + (x2 - x_center_in - delta_x) * cos_theta - (y2 - y_center_in - delta_y) * sin_theta
+            y1 = y_center_in + (x2 - x_center_in - delta_x) * sin_theta - (y2 - y_center_in - delta_y) * cos_theta
 
                                 ; Extract integer part of pixel
                                 ; address
@@ -783,6 +791,11 @@ if transrot and bilinear then begin
                                 ; does not exceed image range
             if ( x1 gt 0 ) and ( x1 le (x_size_in - 2) ) and $
                ( y1 ge 0 ) and ( y1 le (y_size_in - 2) ) then begin
+
+               c1 = image_in[xi    , yi    ]
+               c2 = image_in[xi    , yi + 1]
+               c3 = image_in[xi + 1, yi    ]
+               c4 = image_in[xi + 1, yi + 1]
 
                                 ; Apply binlinear interpolation
                                 ; formula to define the pisel

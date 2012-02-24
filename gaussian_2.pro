@@ -39,7 +39,7 @@ FUNCTION GAUSSIAN_2, x_size, y_size, sigma_x, sigma_y
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Define a 2_D Buffer array
-buffer = FLTARR(y_size, x_size)
+buffer = FLTARR(x_size, y_size)
 
 ; Define Gaussian center
 x_0 = x_size / 2.

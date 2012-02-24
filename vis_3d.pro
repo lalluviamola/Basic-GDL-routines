@@ -1,6 +1,10 @@
-PRO VIS_3D, win_x_size, win_y_size, win_title,                           $
-            image_1, x_size_1, y_size_1, title_1, x_title_1, y_title_1, $
-            image_2, x_size_2, y_size_2, title_2, x_title_2, y_title_2
+PRO VIS_3D, image_1, image_2,                                 $
+            win_x_size, win_y_size,                           $
+            win_title,                                        $
+            title_1,                                          $
+            x_title_1, y_title_1,                             $
+            title_2,                                          $
+            x_title_2, y_title_2
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -55,7 +59,7 @@ PRO VIS_3D, win_x_size, win_y_size, win_title,                           $
 ; 3-D Visualization
 
 ; Define centered window origin based on twice input window x-size
-CENTER_WINDOW_POS, 2 * win_x_size, y_win_size, x_win_pos, y_win_pos
+CENTER_WINDOW_POS, 2 * win_x_size, win_y_size, x_win_pos, y_win_pos
 
 ; Open window
 WINDOW, 2, XSIZE = 2 * win_x_size, YSIZE = win_y_size, $
