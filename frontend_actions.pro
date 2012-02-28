@@ -24,7 +24,7 @@ WIDGET_CONTROL, wBase, SET_UVALUE = stash
 ; Let work FRONTEND_EVENTS until widget will be destroyed
 XMANAGER, 'FRONTEND', wBase
 
-return, value
+return, *ptr
 
 END
 

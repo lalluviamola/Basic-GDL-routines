@@ -93,7 +93,10 @@ if (TAG_NAMES(ev, /STRUCTURE_NAME) eq 'WIDGET_BUTTON') then begin
   ; adjust settings in the application to reflect the changes made 
   ; by the user. Finally, destroy the widgets. 
   if (ev.ID eq stash.bOK) then begin 
-     print, 'What can I do now that I know that value is ', stash.value, ' if I am in a jail?'
+
+     ; Create a pointer for value the user chosen.
+     ; Idea taken from http://www.idlcoyote.com/programs/textbox.pro
+     ptr = Ptr_New(value)
      WIDGET_CONTROL, ev.TOP, /DESTROY 
   endif 
 
