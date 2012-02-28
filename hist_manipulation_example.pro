@@ -2,7 +2,7 @@ PRO HISTO_MANIPULATION
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This procedure performs various hitogram manipulation
+; This procedure performs various histogram manipulations
 ; ON A GRAYSCALE IMAGE
 ;
 ; Input:          -
@@ -55,7 +55,7 @@ DEVICE, DECOMPOSED = 0
 LOADCT, 0
 
 ; Get a grayscale image of Mars by direct conversion from image file
-READ_JPEG, !DIR + '/examples/data/marsglobe.jog', image, $
+READ_JPEG, !DIR + '/examples/data/marsglobe.jpg', image, $
            /GRAYSCALE
 
 ; Determine image size
