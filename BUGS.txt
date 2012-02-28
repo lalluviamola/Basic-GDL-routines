@@ -1,0 +1,1 @@
+When changing turning original_size/kind_size of images with palette, background color changes.

@@ -98,14 +98,19 @@ N_actions = (SIZE(actions_table, /DIMENSIONS))[1]
 ; Image selection
 ;-----------------------
 
-; Ask one image file
-image_in_filename = Dialog_pickfile(/READ, PATH = !DIR + PATH_SEP() + 'examples' $
-                                                       + PATH_SEP() + 'data')
+; Ask a image file
+has_chosen = DIALOG_READ_IMAGE( FILE = image_in_filename,              $
+                                PATH = !DIR + PATH_SEP() + 'examples'  $
+                                + PATH_SEP() + 'data')
+
+; If no one is chosen, finish execution
+if not has_chosen then GOTO, FINISH_EXECUTION
+
 ; Check if image is readable and query it
 known_format = QUERY_IMAGE(image_in_filename, image_in_info)
 
 if known_format ne 1 then begin
-   print, 'Unreadable image. Please run again the program and choose other.'
+   MESSAGE, 'Error: Unreadable image.'
    GOTO, FINISH_EXECUTION
 endif
 
@@ -354,7 +359,7 @@ endcase
 
 ; Define an array with a number of elements equal to the total number
 ; of actions
-actions_available = STRARR(N_actions)
+available_actions = STRARR(N_actions)
 
 ; Define a free index only to be used in next for
 j = 0
@@ -364,7 +369,7 @@ for i=0, N_actions - 1 do begin
 
    if WHERE(actions_table[1:3, i] eq current_type) ne -1 then begin
 
-      actions_available[j]= actions_table[0, i]
+      available_actions[j]= actions_table[0, i]
       j = j + 1
 
    endif
@@ -382,32 +387,53 @@ available_actions = available_actions[0 : j-1]
 ;----------------------
 ; CHOOSE action
 ;----------------------
-action_index = -1
+;action_index = -1
 
- Follow asking for an action
-REPEAT read, PROMPT='Enter index of action you wish: ', action_index $
+; Follow asking for an action
+;REPEAT read, PROMPT='Enter index of action you wish: ', action_index $
+;
+; ...until it was available for current type of image
+;UNTIL ( (action_index ge 0)                     and $
+;        (action_index lt N_actions)             and $
+;        (actions_available[action_index] ne '')     $
+;      )
 
- ...until it was available for current type of image
-UNTIL ( (action_index ge 0)                     and $
-        (action_index lt N_actions)             and $
-        (actions_available[action_index] ne '')     $
-      )
+;current_action = actions_table[0, action_index]
 
-current_action = actions_table[0, action_index]
+; Create an anonymous structure to hold widget IDs and the 
+; data structure. This structure becomes the user value of the 
+; top-level base widget. 
+;stash = { action:action, range:range, bDone=bDone, bCancel=bCancel}
 
-; Create a Widget
+; Define the base widget that contains the buttons
+;base = WIDGET_BASE()
 
-;base = WIDGET_BASE()  
-;bgroup = CW_BGROUP(base, actions_available, /COLUMN, /RETURN_NAME)  
-;WIDGET_CONTROL, base, /REALIZE  
+; Define a button for any available action
+; /RETURN_NAME keyword will return the name of the button in the VALUE
+; field of returned events.
+;bgroup = CW_BGROUP(base, available_actions, /COLUMN, /RETURN_NAME)  
+
+; Display the widget
+;WIDGET_CONTROL, base, /REALIZE
+
+; Start managing events! 
 ;XMANAGER, 'frontend', base
 
-; Other way
-; XMENU, SINDGEN(10), BASE = base, BUTTONS=B
-; WIDGET_CONTROL, /REALIZE, BASE
-; event = WIDGET_EVENT(base)
-; PRINT, 'Button pressed: ', where(b eq event.id)
-; WIDGET_CONTROL, base /DESTROY
+; Define menu for selecting one action
+XMENU, available_actions, $
+       BASE = base,       $
+       BUTTONS=B,         $
+       TITLE = 'Choose an action'
+
+; Create menu
+WIDGET_CONTROL, /REALIZE, BASE
+
+; Catch which action was choosen
+event = WIDGET_EVENT(base)
+current_action = available_actions[ where(b eq event.id) ]
+
+; Destroy the menu
+WIDGET_CONTROL, base, /DESTROY
 
 ;----------------------
 ; Apply action
