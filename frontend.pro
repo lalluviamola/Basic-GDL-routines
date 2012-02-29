@@ -79,6 +79,9 @@ image_screen_mod_rel = 0.8
 ; always over the original image
 add_operations       = 0
 
+; Ask a new action to the user or repeat last CURRENT_ACTION
+ask_new_action = 1
+
 ; Define ACTIONS
 actions_table =                                                                 $
 [                                                                               $
@@ -357,32 +360,35 @@ endcase
 ; ACTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+if ask_new_action then begin
+
 ; Define an array with a number of elements equal to the total number
 ; of actions
-available_actions = STRARR(N_actions)
+   available_actions = STRARR(N_actions)
 
 ; Define a free index only to be used in next for
-j = 0
+   j = 0
 
 ; Write in this array only those actions that are allowed for our image
-for i=0, N_actions - 1 do begin
+   for i=0, N_actions - 1 do begin
 
-   if WHERE(actions_table[1:3, i] eq current_type) ne -1 then begin
+      if WHERE(actions_table[1:3, i] eq current_type) ne -1 then begin
 
-      available_actions[j]= actions_table[0, i]
-      j = j + 1
+         available_actions[j]= actions_table[0, i]
+         j = j + 1
 
-   endif
-
-endfor
+      endif
+      
+   endfor
 
 ; Define number of available actions
 ; (it is just j since it has increased 1 last iteration)
 ; N_available_actions = j
 
 ; Cut the original vector
-available_actions = available_actions[0 : j-1]
+   available_actions = available_actions[0 : j-1]
 
+endif
 
 ;----------------------
 ; CHOOSE action
@@ -419,21 +425,25 @@ available_actions = available_actions[0 : j-1]
 ; Start managing events! 
 ;XMANAGER, 'frontend', base
 
+if ask_new_action then begin
+
 ; Define menu for selecting one action
-XMENU, available_actions, $
-       BASE = base,       $
-       BUTTONS=B,         $
-       TITLE = 'Choose an action'
+   XMENU, available_actions, $
+          BASE = base,       $
+          BUTTONS=B,         $
+          TITLE = 'Choose an action'
 
 ; Create menu
-WIDGET_CONTROL, /REALIZE, BASE
+   WIDGET_CONTROL, /REALIZE, BASE
 
 ; Catch which action was choosen
-event = WIDGET_EVENT(base)
-current_action = available_actions[ where(b eq event.id) ]
+   event = WIDGET_EVENT(base)
+   current_action = available_actions[ where(b eq event.id) ]
 
 ; Destroy the menu
-WIDGET_CONTROL, base, /DESTROY
+   WIDGET_CONTROL, base, /DESTROY
+
+endif
 
 ;----------------------
 ; Apply action

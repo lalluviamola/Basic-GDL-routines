@@ -77,28 +77,48 @@ PRO FRONTEND_EVENT, ev
 ; the top-level base widget. 
 WIDGET_CONTROL, ev.TOP, GET_UVALUE = stash 
 
-; Test for button event to end application
+; If event was caused by a user movement of the slider...
 if (TAG_NAMES(ev, /STRUCTURE_NAME) eq 'WIDGET_SLIDER') then begin
 
+   ; ...annotate the chosen value 
    WIDGET_CONTROL, ev.ID, GET_VALUE = value
-   stash.value = value
+   stash.sliderValue = value
    WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash
 
 endif
 
+; If event was caused by the check-box...
+if (TAG_NAMES(ev, /STRUCTURE_NAME) eq 'CW_BGROUP') then begin
+
+   ; ...annotate the chosen option
+   WIDGET_CONTROL, ev.ID, GET_VALUE = value
+   stash.chosenOption = value
+   WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash
+
+endif
+
+; If event was caused for pressing a button...
+
+; For info about for returning values of Compound Widgets, read:
+; http://idlastro.gsfc.nasa.gov/idl_html_help/Creating_a_Compound_Widget.html#wp1042483
 if (TAG_NAMES(ev, /STRUCTURE_NAME) eq 'WIDGET_BUTTON') then begin
       
-  ; If the user clicked the 'Done' button.
-  ; In a real application, this step would probably 
-  ; adjust settings in the application to reflect the changes made 
-  ; by the user. Finally, destroy the widgets. 
-  if (ev.ID eq stash.bOK) then begin 
+   ; ...check which was the button... 
+   case ev.ID of
 
-     ; Create a pointer for value the user chosen.
-     ; Idea taken from http://www.idlcoyote.com/programs/textbox.pro
-     ptr = Ptr_New(value)
-     WIDGET_CONTROL, ev.TOP, /DESTROY 
-  endif 
+      stash.bCancel  : (*stash.ptr).status = 'Cancel'
+      stash.bRefresh : (*stash.ptr).status = 'Refresh'
+      stash.bDone    : (*stash.ptr).status = 'Done'
+
+   endcase
+
+   ; ...annotate it...
+   WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash
+
+   ; ...and destroy the widget at any case
+   ; (if bRefresh, the widget will be created again;
+   ;  it's the cleaner solution I can guess today :/)
+   WIDGET_CONTROL, ev.TOP, /DESTROY
 
 endif
 

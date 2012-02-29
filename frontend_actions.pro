@@ -1,44 +1,85 @@
-FUNCTION WIDGET_ASK_VALUE, RANGE=range, LABEL=label, $
-                           MINIMUM = minimum, MAXIMUM = MAXIMUM
+FUNCTION WIDGET_ASK_TRANSFORMATION_PARAMETERS, $
+   PARAMETERS  = parameters,        $
+   RANGE       = range,             $
+   LABEL       = label,             $
+   EXCL_OPTS   = excl_options,      $
+   EXCL_OPTS_LABEL = excl_opts_label
 
-; Define a base for the widget
-wBase    = WIDGET_BASE(/COLUMN)
+; Input: PARAMETERS idea is not implemented yet
 
-; Define the label at top
-wLabel   = WIDGET_LABEL(wBase, VALUE = label)
+; Define main base for the widget
+mainBase    = WIDGET_BASE(/COLUMN)
 
-; Define an slider depending on RANGE
-wSlider  = WIDGET_SLIDER(wBase,                                 $
-                         MINIMUM = range[0], MAXIMUM = range[1])
+; Define a base for options and selecting value with an slider
+if N_ELEMENTS(EXCL_OPTIONS) ne 0 then begin
 
-; Define a lonely OK button
-bOK      = WIDGET_BUTTON(wbase, VALUE = 'OK')
+   secondBase = WIDGET_BASE(mainBase, /ROW)
+   label1     = WIDGET_LABEL(secondbase, VALUE = label)
+   slider     = WIDGET_SLIDER(secondBase, MINIMUM = range[0], MAXIMUM = range[1])
+   options    = CW_BGROUP(secondBase, excl_options,     $
+                          LABEL_TOP = excl_opts_label,  $
+                          /COLUMN, /EXCLUSIVE, /RETURN_NAME)
 
-; Define the user structure which will be associated to wBase
-stash = {bOK:bOK, value:1}
+endif else $
+
+   slider   = WIDGET_SLIDER(mainBase, MINIMUM = range[0], MAXIMUM = range[1])
+
+
+; Define a base for the buttons
+bBase = WIDGET_BASE(mainBase, /ROW)
+
+; Define a pointer for getting information inside FRONTEND_EVENT
+ptr = Ptr_New({status:'', chosenOption:0,  sliderValue:0})
+
+; Define the buttons
+bCancel  = WIDGET_BUTTON(bBase, VALUE='Cancel') 
+bRefresh = WIDGET_BUTTON(bBase, VALUE='Refresh') 
+bDone    = WIDGET_BUTTON(bBase, VALUE='Done') 
+
+; Define the user structure kept on the main widget
+; 3 first will be the IDs of the buttons
+; the rest are pointers which indicate useful parameters
+; to be passed to the associated procedure to the ACTION
+stash = {bCancel:bCancel, bRefresh:bRefresh, bDone:bDone, $
+         ptr:ptr}
 
 ; Display the widget and associate the structure to wBase
-WIDGET_CONTROL, wBase, /REALIZE
-WIDGET_CONTROL, wBase, SET_UVALUE = stash
+WIDGET_CONTROL, mainBase, /REALIZE
+WIDGET_CONTROL, mainBase, SET_UVALUE = stash
 
-; Let work FRONTEND_EVENTS until widget will be destroyed
-XMANAGER, 'FRONTEND', wBase
+; Let work FRONTEND_EVENTS until widget be destroyed
+XMANAGER, 'FRONTEND', mainBase
 
-return, *ptr
+output = {chosenOption:(*ptr).chosenOption, $
+                 value:(*ptr).sliderValue,  $
+                status:(*ptr).status
+         }
+
+Ptr_Free, ptr
+
+return, output
 
 END
 
-FUNCTION FRONTEND_ACTIONS, image, action, current_type, r, g, b
+
+FUNCTION FRONTEND_ACTIONS, image, action, current_type, r, g, b, ask_new_action
 ; This procedure does the particular operation over images. It
 ; "stores" every action not related directly with the frontend.
+
 
 case action of
 
    'Binarize' : begin
-      value = 1
-      value = WIDGET_ASK_VALUE, RANGE = [0, 100], LABEL = 'Choose Value:'
-      read, PROMPT = 'Level of threshold (0-100): ', value
-      image_out = BINARIZE(image, value)
+
+      info = WIDGET_ASK_TRANSFORMATION_PARAMETERS(      $
+             LABEL           = 'Set threshold:',        $
+             RANGE           = [0, 100],                $
+             EXCL_OPTS       = ['dasd', 'hggj'],        $
+             EXCL_OPTS_LABEL = 'Mode of threshold: ')
+
+      if info.status ne 'Cancel' then $
+         image_out = BINARIZE(image, info.value, MODE = info.chosenOption)
+
    end
 
    'Quantize' : begin
@@ -55,6 +96,10 @@ case action of
   end
 
 endcase
+
+if info.status eq 'Refresh' $
+then ask_new_action = 0     $
+else ask_new_action = 1
 
 return, image_out
 end
