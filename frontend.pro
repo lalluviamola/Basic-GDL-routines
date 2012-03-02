@@ -77,19 +77,22 @@ image_screen_mod_rel = 0.8
 
 ; Different operations are acumulative instead of acting
 ; always over the original image
-add_operations       = 0
+add_operations       = 1
 
-; Ask a new action to the user or repeat last CURRENT_ACTION
-ask_new_action = 1
+; This varaible skips or not (default) the blocks which should be
+; executed if ADD_OPERATIONS = 1 and also avoid petition of new
+; actions
+not_refreshing = 1
+
 
 ; Define ACTIONS
-actions_table =                                                                 $
-[                                                                               $
- ['Retain/Forget changes',             'true_color', 'mono_chrome', 'palette'], $
- ['Original size/Better adjust size',  'true_color', 'mono_chrome', 'palette'], $
- ['Binarize',                          '',           'mono_chrome', ''       ], $
- ['Quantize',                          'true_color', ''           , ''       ], $
- ['Exit',                              'true_color', 'mono_chrome', 'palette']  $
+actions_table =                                                                           $
+[                                                                                         $
+ ['Retain/Forget changes',             'true_color', 'mono_chrome', 'palette', 'binary'], $
+ ['Original size/Better adjust size',  'true_color', 'mono_chrome', 'palette', 'binary'], $
+ ['Binarize',                          '',           'mono_chrome', ''       , ''      ], $
+ ['Quantize',                          'true_color', ''           , ''       , ''      ], $
+ ['Exit',                              'true_color', 'mono_chrome', 'palette', 'binary']  $
 ]
 
 ; Calculate numbers of actions
@@ -246,19 +249,19 @@ if keep_original_size eq 1 then begin
          ypos = screen_top    - screen_up_sign *   current_image_size[1]
       end      
       else    : begin
-         print, 'INTERNAL ERROR: OS Family not detected'
+         MESSAGE, 'INTERNAL ERROR: OS Family not detected'
          GOTO, FINISH_EXECUTION
       end
    endcase 	
 
    ; Create WINDOW which will display the image
-   WINDOW, 1,                                   $
+   WINDOW, 1,                             $
            XSIZE = current_image_size[0], $
            YSIZE = current_image_size[1], $
-           XPOS  = screen_left,                 $
+           XPOS  = screen_right,          $
            YPOS  = ypos
 
-; Get ready IMAGE to SHOW if original size is NOT kept
+; Adjust IMAGE to SHOW if original size is not used
 endif else begin
 
    ; Calculate relation between image and screen sizes
@@ -310,7 +313,7 @@ endif else begin
    WINDOW, 1,                           $
            XSIZE = current_vis_size[0], $
            YSIZE = current_vis_size[1], $
-           XPOS  = screen_left,         $
+           XPOS  = screen_right,        $
            YPOS  = ypos
 
 endelse
@@ -353,6 +356,15 @@ case current_type of
       LOADCT, 0 ; ...grey...
       TVSCL, current_vis ; ..and do an intensity balance
    end
+
+   'binary' : begin ; A better idea?????
+
+      DEVICE, DECOMPOSED = 0
+      LOADCT, 0
+      TVSCL, current_vis
+
+   end
+
 endcase
 
 
@@ -360,7 +372,7 @@ endcase
 ; ACTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-if ask_new_action then begin
+if not_refreshing then begin
 
 ; Define an array with a number of elements equal to the total number
 ; of actions
@@ -372,7 +384,7 @@ if ask_new_action then begin
 ; Write in this array only those actions that are allowed for our image
    for i=0, N_actions - 1 do begin
 
-      if WHERE(actions_table[1:3, i] eq current_type) ne -1 then begin
+      if WHERE(actions_table[1:4, i] eq current_type) ne -1 then begin
 
          available_actions[j]= actions_table[0, i]
          j = j + 1
@@ -425,7 +437,7 @@ endif
 ; Start managing events! 
 ;XMANAGER, 'frontend', base
 
-if ask_new_action then begin
+if not_refreshing then begin
 
 ; Define menu for selecting one action
    XMENU, available_actions, $
@@ -449,8 +461,10 @@ endif
 ; Apply action
 ;----------------------
 
-; Set current_image to original image if necessary
-if not add_operations then current_image = image_in 
+; Set current_image to the original image if we are refreshing a image
+; or ADD_OPERATIONS option hasn't been set
+if not (not_refreshing && add_operations) then $
+   current_image = image_in 
 
 ; This case act DIRECTLY over actions that depends only of the
 ; front_end. For the rest of actions, it is called FRONTEND_ACTIONS
@@ -478,22 +492,26 @@ case current_action of
 
    'Exit' : GOTO, FINISH_EXECUTION
 
-                                ; Execute no-inner operations
-                                ; WARNING: It over-rides CURRENT_TYPE
-                                ; to the correct one!
-   else : image_out = FRONTEND_ACTIONS(current_image, current_action, current_type, r, g, b)
+                                ; Execute external operations
+                                ; WARNING: It over-rides CURRENT_TYPE,
+                                ; REFRESHING and INFO
+   else : image_out = FRONTEND_ACTIONS(current_image, current_action, $
+                                       current_type,                  $
+                                       r, g, b,                       $
+                                       not_refreshing,                $
+                                       info)
 
 endcase
 
 ;---------------------
 ; Show new image
 ;---------------------
-PRINT, 'New type of image: ', current_type
+PRINT, 'You are working with a image of type: ', current_type
 current_image = image_out
 GOTO, REFRESH_WINDOW
 
 FINISH_EXECUTION: $
-   WDELETE, 1 ; Without an action here different to END there are problems on GDL (IDL?)
+   WDELETE, 1 ; Without an action here different to END there are problems in both GDL and IDL
 
 END
 

@@ -82,7 +82,7 @@ if (TAG_NAMES(ev, /STRUCTURE_NAME) eq 'WIDGET_SLIDER') then begin
 
    ; ...annotate the chosen value 
    WIDGET_CONTROL, ev.ID, GET_VALUE = value
-   stash.sliderValue = value
+   (*stash.ptrInfo).value = value
    WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash
 
 endif
@@ -91,8 +91,8 @@ endif
 if (TAG_NAMES(ev, /STRUCTURE_NAME) eq 'CW_BGROUP') then begin
 
    ; ...annotate the chosen option
-   WIDGET_CONTROL, ev.ID, GET_VALUE = value
-   stash.chosenOption = value
+   WIDGET_CONTROL, ev.ID, GET_VALUE = option
+   (*stash.ptrInfo).option = option
    WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash
 
 endif
@@ -106,9 +106,9 @@ if (TAG_NAMES(ev, /STRUCTURE_NAME) eq 'WIDGET_BUTTON') then begin
    ; ...check which was the button... 
    case ev.ID of
 
-      stash.bCancel  : (*stash.ptr).status = 'Cancel'
-      stash.bRefresh : (*stash.ptr).status = 'Refresh'
-      stash.bDone    : (*stash.ptr).status = 'Done'
+      stash.bCancel  : *stash.ptrStatus = 'Cancel'
+      stash.bRefresh : *stash.ptrStatus = 'Refresh'
+      stash.bDone    : *stash.ptrStatus = 'Done'
 
    endcase
 

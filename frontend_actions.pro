@@ -1,11 +1,49 @@
+FUNCTION GRAB_BUTTON, ev 
+
+  ; Get the 'stash' structure. 
+  WIDGET_CONTROL, ev.TOP, GET_UVALUE = stash 
+
+  ; Get the value and user value from the widget that 
+  ; generated the event. 
+  WIDGET_CONTROL, ev.ID, GET_VALUE = option
+
+  (*stash.ptrInfo).option = option
+
+  ; Reset the top-level widget's user value to the updated 
+  ; 'stash' structure. 
+  WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash 
+END 
+
+
 FUNCTION WIDGET_ASK_TRANSFORMATION_PARAMETERS, $
+   info,                            $
    PARAMETERS  = parameters,        $
    RANGE       = range,             $
    LABEL       = label,             $
    EXCL_OPTS   = excl_options,      $
-   EXCL_OPTS_LABEL = excl_opts_label
+   EXCL_LABEL  = excl_label
 
-; Input: PARAMETERS idea is not implemented yet
+; ATENTION: I don't know why, the image window goes to background
+;           when this function is called after choosen
+;           'Cancel' button 
+;
+; Input: PARAMETERS idea is not really implemented yet
+
+; Define a pointer for getting information about button pressed by the
+; user 
+ptrStatus = Ptr_New('')
+
+; Define a pointer for getting information about chosen setting values
+; If it is a refresh, use the last values
+if N_ELEMENTS(info) ne 0 then $
+
+   ptrInfo   = Ptr_New({option:info.option, $
+                         value:info.value}) $
+
+; If not, initialize them
+else $
+
+   ptrInfo   = Ptr_New({option:0, value:0})
 
 ; Define main base for the widget
 mainBase    = WIDGET_BASE(/COLUMN)
@@ -14,11 +52,19 @@ mainBase    = WIDGET_BASE(/COLUMN)
 if N_ELEMENTS(EXCL_OPTIONS) ne 0 then begin
 
    secondBase = WIDGET_BASE(mainBase, /ROW)
+
    label1     = WIDGET_LABEL(secondbase, VALUE = label)
-   slider     = WIDGET_SLIDER(secondBase, MINIMUM = range[0], MAXIMUM = range[1])
-   options    = CW_BGROUP(secondBase, excl_options,     $
-                          LABEL_TOP = excl_opts_label,  $
-                          /COLUMN, /EXCLUSIVE, /RETURN_NAME)
+
+   slider     = WIDGET_SLIDER(secondBase,                   $
+                              VALUE = (*ptrInfo).value,     $
+                              MINIMUM   = range[0],         $
+                              MAXIMUM   = range[1])
+
+   options    = CW_BGROUP(secondBase, excl_options,         $
+                          LABEL_TOP  = excl_label,          $
+                          SET_VALUE  = (*ptrInfo).option,   $
+                          EVENT_FUNC = 'GRAB_BUTTON',       $ 
+                          /COLUMN, /EXCLUSIVE)
 
 endif else $
 
@@ -27,9 +73,6 @@ endif else $
 
 ; Define a base for the buttons
 bBase = WIDGET_BASE(mainBase, /ROW)
-
-; Define a pointer for getting information inside FRONTEND_EVENT
-ptr = Ptr_New({status:'', chosenOption:0,  sliderValue:0})
 
 ; Define the buttons
 bCancel  = WIDGET_BUTTON(bBase, VALUE='Cancel') 
@@ -41,7 +84,7 @@ bDone    = WIDGET_BUTTON(bBase, VALUE='Done')
 ; the rest are pointers which indicate useful parameters
 ; to be passed to the associated procedure to the ACTION
 stash = {bCancel:bCancel, bRefresh:bRefresh, bDone:bDone, $
-         ptr:ptr}
+         ptrInfo:ptrInfo, ptrStatus:ptrStatus}
 
 ; Display the widget and associate the structure to wBase
 WIDGET_CONTROL, mainBase, /REALIZE
@@ -50,19 +93,20 @@ WIDGET_CONTROL, mainBase, SET_UVALUE = stash
 ; Let work FRONTEND_EVENTS until widget be destroyed
 XMANAGER, 'FRONTEND', mainBase
 
-output = {chosenOption:(*ptr).chosenOption, $
-                 value:(*ptr).sliderValue,  $
-                status:(*ptr).status
-         }
+output = {  value:(*ptrInfo).value,         $
+           option:(*ptrInfo).option,        $
+           status:(*ptrStatus)}
 
-Ptr_Free, ptr
+; Free allocated memory
+Ptr_Free, ptrInfo
+Ptr_Free, ptrStatus
 
 return, output
 
 END
 
 
-FUNCTION FRONTEND_ACTIONS, image, action, current_type, r, g, b, ask_new_action
+FUNCTION FRONTEND_ACTIONS, image_in, action, current_type, r, g, b, not_refreshing, info
 ; This procedure does the particular operation over images. It
 ; "stores" every action not related directly with the frontend.
 
@@ -71,21 +115,27 @@ case action of
 
    'Binarize' : begin
 
-      info = WIDGET_ASK_TRANSFORMATION_PARAMETERS(      $
-             LABEL           = 'Set threshold:',        $
-             RANGE           = [0, 100],                $
-             EXCL_OPTS       = ['dasd', 'hggj'],        $
-             EXCL_OPTS_LABEL = 'Mode of threshold: ')
+      info = WIDGET_ASK_TRANSFORMATION_PARAMETERS( $
+             info,                                 $
+             LABEL      = 'Set threshold:',        $
+             RANGE      = [0, 100],                $
+             EXCL_OPTS  = ['LE', 'GT'],            $
+             EXCL_LABEL = 'Mode of threshold: ')
 
       if info.status ne 'Cancel' then $
-         image_out = BINARIZE(image, info.value, MODE = info.chosenOption)
+
+         image_out = BINARIZE(image_in, info.value, MODE = info.option)
+
+      if info.status eq 'Done' then   $
+
+         current_type = 'binary'
 
    end
 
    'Quantize' : begin
       pseudo_grayscale = 0
       gray_component = '0'
-      PSEUDO_COLOR, image, image_out, r, g, b,           $
+      PSEUDO_COLOR, image_in, image_out, r, g, b,        $
                     PSEUDO_GRAYSCALE = pseudo_grayscale, $
                     GRAY_COMPONENT = gray_component
       current_type = 'palette'
@@ -97,9 +147,11 @@ case action of
 
 endcase
 
-if info.status eq 'Refresh' $
-then ask_new_action = 0     $
-else ask_new_action = 1
+; Update refresh variable
+not_refreshing =  info.status eq 'Refresh' ? 0 : 1
+
+; If user canceled, return the incoming image
+if info.status eq 'Cancel' then image_out = image_in
 
 return, image_out
 end
