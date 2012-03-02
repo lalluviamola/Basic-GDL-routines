@@ -56,13 +56,13 @@ INSTALLATION_DIR="$HOME/My_Programs"
 # Where to compile GDL and the dependencies (it can create more than 1 GB
 # of files, so if you have a quota of space used, you may want to use a usb
 # device instead for saving the compiled programs.
-COMPILATION_DIR=`pwd`
+COMPILATION_DIR="$HOME/Compiling"
 
 # Probably the user want to have GDL in a more permanent site than dependencies
-GDL_COMPILATION_DIR=`pwd`
+GDL_COMPILATION_DIR="$HOME/Compiling"
 
 # Path to the directory with source tarballs.
-PKGS_DIR=`pwd`
+PKGS_DIR="$HOME/Compiling"
 
 # Names of the tarballs (without extension) with the source code of the
 # dependencies that will be used for the installation. This script expects
@@ -194,7 +194,7 @@ function plplot-configuration {
     # name of a directory needed by cmake.
     cmake -DCMAKE_INSTALL_PREFIX=${INSTALLATION_DIR} \
           -DENABLE_DYNDRIVERS=OFF \
-          -DPLD_wxwidgets=OFF \
+          -DPLD_wxwidgets=${INSTALLATION_DIR} \
           .. # Theese points are not an error!
     cd -
 }
@@ -330,7 +330,7 @@ function gdl-configuration {
 	  -DPSLIB=OFF \
           -DPLPLOTDIR=${INSTALLATION_DIR} \
           -DMAGICKDIR=${INSTALLATION_DIR} \
-	  -DWXWIDGETS=OFF \
+	  -DWXWIDGETS=${INSTALLATION_DIR} \
           -DFFTW=OFF \
           -DHDF=OFF \
           -DHDF5=OFF \
