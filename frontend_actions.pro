@@ -106,10 +106,17 @@ return, output
 END
 
 
-FUNCTION FRONTEND_ACTIONS, image_in, action, current_type, r, g, b, not_refreshing, info
-; This procedure does the particular operation over images. It
-; "stores" every action not related directly with the frontend.
+FUNCTION FRONTEND_ACTIONS, image, action, image_type, image_out_type, r, g, b, not_preview, info
+; This procedure select which operation is used with any action
 
+; Input: image          Image to apply the action
+;        action         Action to apply
+;        image_type     Type of image
+;        image_out_type Type of returned image
+;        r,g, b         Palette (if any)
+;        not_preview    (really an output)
+;        info           (really an output, although it is used)
+;        EXPLAIN ME!
 
 case action of
 
@@ -117,28 +124,25 @@ case action of
 
       info = WIDGET_ASK_TRANSFORMATION_PARAMETERS( $
              info,                                 $
-             LABEL      = 'Set threshold:',        $
+             LABEL      = 'Level of threshold:',   $
              RANGE      = [0, 100],                $
-             EXCL_OPTS  = ['LE', 'GT'],            $
+             EXCL_OPTS  = ['LE', 'GT'],           $
              EXCL_LABEL = 'Mode of threshold: ')
 
-      if info.status ne 'Cancel' then $
+      if info.status ne 'Cancel' then begin
 
-         image_out = BINARIZE(image_in, info.value, MODE = info.option)
+         image_out = BINARIZE(image, info.value, MODE = info.option)
+         image_out_type = 'binary'
 
-      if info.status eq 'Done' then   $
-
-         current_type = 'binary'
+      endif
 
    end
 
    'Quantize' : begin
-      pseudo_grayscale = 0
-      gray_component = '0'
-      PSEUDO_COLOR, image_in, image_out, r, g, b,        $
-                    PSEUDO_GRAYSCALE = pseudo_grayscale, $
-                    GRAY_COMPONENT = gray_component
-      current_type = 'palette'
+      PSEUDO_COLOR, image, image_out, r, g, b, $
+                    PSEUDO_GRAYSCALE = 0,         $
+                    GRAY_COMPONENT = -1
+      image_out_type = 'palette'
    end
 
    else : begin
@@ -148,10 +152,15 @@ case action of
 endcase
 
 ; Update refresh variable
-not_refreshing =  info.status eq 'Refresh' ? 0 : 1
+not_preview =  info.status eq 'Refresh' ? 0 : 1
 
 ; If user canceled, return the incoming image
-if info.status eq 'Cancel' then image_out = image_in
+if info.status eq 'Cancel' then begin
 
+   image_out = image
+   image_out_type = image_type
+
+endif
+   
 return, image_out
 end

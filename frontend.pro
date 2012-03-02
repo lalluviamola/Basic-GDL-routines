@@ -3,36 +3,61 @@ PRO FRONTEND
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; This is a frontend for applying the methods studied during the IDL
-; course to any image.
+; course to any image which accept it, depending of its type.
 ;
 ; Brief Description:
 ;
 ;    1. Load an image.
 ;    2. Show image.
-;    3. Ask for an action to apply to the image.
+;    3. Ask for an operation to apply to the image.
 ;    4. Apply the action.
 ;    5. Show new image instead of previous.
-;    6. Go to step 3
+;    6. Go to step 3 using this new image
 ;
 ; In-side description:
-;    * Orignal image is "image_in".
+;
+;   NOTE: We'll use the term ACTION when we mean OPERATION
+;          over an image
+;
+;   Used images: 
+;
+;    * Loaded/original image is "image_in".
 ;    * Resultant image after aplying one action is "image_out"
-;
-;   If "add_operations=0" then actions are always applied over "image_in".
-;   If "add_operations=1" then actions are applied over the last "image_out".
-;
-;   There is only one window for displaying.
-;
-;    * Image that is going to be displayed is "current_image"
+;    * Actions are applied over "current_image"
 ;    * Image displayed is "current_vis". It is a resized (or not)
-;       "current_image".
+;       "image_out" (first time, image_out = image_in)
 ;
-;   Frontend works with three types of images: {'true_color',
-;                                               'mono_chrome',
-;                                               'palette'}       
+;   This program works thinking on the following types of images: 
+;
+;       * 'true_color'
+;       * 'mono_chrome'
+;       * 'palette'
+;       * 'binary'   
+;
+;  * "image_in_type" is the type of "image_in"
+;  * "image_out_type"   is the type of result of last action
+;  * "current_type"  is the type of "current_image"
+;
+;  "Preview" mode:  
+;
+;       * This mode is marked whit the variable "not_preview" as
+;           0
+;       * In this mode, action is applied to "current_image", creating
+;           a "image_out", but
+;       * "image_out" is not copied to "current_image"
+;       * New actions aren't asked. Instead, the widget is created
+;           again expecting to accept parameters or try others
+;       * It is available for some actions which use a widget for
+;           setting the parameters of those action
+;       * It is also possible to cancel the application of this action
+;           through the widget
 ;
 ;
-;
+;  When displaying, "image_out_type" and "image_out" are the variables
+;    always checked
+;  After finshing a "Preview" mode without cancelation,
+;    "current_image" and "current_type" are updated
+;  
 ; Input:          -
 ; Output:         -
 ; External calls: FRONTEND_ACTIONS
@@ -75,23 +100,18 @@ keep_original_size   = 1
 ; "scale_factor" and must be defined after knowing image size.
 image_screen_mod_rel = 0.8
 
-; Different operations are acumulative instead of acting
-; always over the original image
-add_operations       = 1
-
-; This varaible skips or not (default) the blocks which should be
-; executed if ADD_OPERATIONS = 1 and also avoid petition of new
-; actions
-not_refreshing = 1
-
+; This varaible skips or not (default) the blocks which ask for ACTIONS
+not_preview = 1
 
 ; Define ACTIONS
 actions_table =                                                                           $
 [                                                                                         $
- ['Retain/Forget changes',             'true_color', 'mono_chrome', 'palette', 'binary'], $
+ ['Open new image...',                 'true_color', 'mono_chrome', 'palette', 'binary'], $
+ ['Restart',                           'true_color', 'mono_chrome', 'palette', 'binary'], $
  ['Original size/Better adjust size',  'true_color', 'mono_chrome', 'palette', 'binary'], $
  ['Binarize',                          '',           'mono_chrome', ''       , ''      ], $
  ['Quantize',                          'true_color', ''           , ''       , ''      ], $
+ ['Save as...',                        'true_color', 'mono_chrome', 'palette', 'binary'], $
  ['Exit',                              'true_color', 'mono_chrome', 'palette', 'binary']  $
 ]
 
@@ -103,6 +123,8 @@ N_actions = (SIZE(actions_table, /DIMENSIONS))[1]
 ;-----------------------
 ; Image selection
 ;-----------------------
+
+SELECT_IMAGE: $
 
 ; Ask a image file
 has_chosen = DIALOG_READ_IMAGE( FILE = image_in_filename,              $
@@ -165,14 +187,6 @@ if image_in_type eq 'true_color' then begin
 
 end
 
-
-current_image = image_in
-current_type  = image_in_type
-
-
-
-
-
 ;--------------------------
 ; Get DIMENSIONS of SCREEN
 ;--------------------------
@@ -208,29 +222,34 @@ screen_right = screen_size[0] - 1
 
 
 
+; Set image variables equal to the loaded image at the first iteration
+image_out      = image_in
+current_image  = image_in
+image_out_type = image_in_type
+current_type   = image_in_type
+
 ;------------------------------------------------------------------------------------
-; MAIN LOOP: Before entering here must be set correctly CURRENT_TYPE
+; MAIN LOOP: Before entering here must be set correctly IMAGE_OUT(_TYPE)
 REFRESH_WINDOW: $
 
-
-
+   PRINT, 'It is going to be displayed a image of type: ', image_out_type
 
 ;----------------------------------------
 ; DIMENSIONS of image to SHOW
 ;----------------------------------------
 
-; Calculate DIMENSIONS (width, height) of CURRENT IMAGE
-   case current_type of
+; Calculate DIMENSIONS (width, height) of IMAGE_OUT
+case image_out_type of
 
    'true_color' : begin
 
-      net_size           = SIZE(current_image, /DIMENSIONS)
+      net_size           = SIZE(image_out, /DIMENSIONS)
       size_indexes       = WHERE( net_size ne 3 )
-      current_image_size = [ net_size[size_indexes[0]], net_size[size_indexes[1]] ]
+      image_out_size = [ net_size[size_indexes[0]], net_size[size_indexes[1]] ]
 
    end
 
-   else : current_image_size = SIZE(current_image, /DIMENSIONS)
+   else : image_out_size = SIZE(image_out, /DIMENSIONS)
 
 endcase
 
@@ -238,15 +257,15 @@ endcase
 if keep_original_size eq 1 then begin
 
    ; Image to show is efectively the same
-   current_vis = current_image
+   current_vis = image_out
 
    ; Set the Y-position of WINDOW depending of OS
    case !VERSION.OS_FAMILY of
       'unix'  : begin
-         ypos = screen_top - screen_up_sign * current_image_size[1]
+         ypos = screen_top - screen_up_sign * image_out_size[1]
          end
       'Win32' : begin
-         ypos = screen_top    - screen_up_sign *   current_image_size[1]
+         ypos = screen_top
       end      
       else    : begin
          MESSAGE, 'INTERNAL ERROR: OS Family not detected'
@@ -256,8 +275,8 @@ if keep_original_size eq 1 then begin
 
    ; Create WINDOW which will display the image
    WINDOW, 1,                             $
-           XSIZE = current_image_size[0], $
-           YSIZE = current_image_size[1], $
+           XSIZE = image_out_size[0],     $
+           YSIZE = image_out_size[1],     $
            XPOS  = screen_right,          $
            YPOS  = ypos
 
@@ -265,7 +284,7 @@ if keep_original_size eq 1 then begin
 endif else begin
 
    ; Calculate relation between image and screen sizes
-   image_screen_rel = (1.0 * current_image_size) / screen_size 
+   image_screen_rel = (1.0 * image_out_size) / screen_size 
 
    ; If proportionally to screen, X-side of image is bigger
    if image_screen_rel[0] gt image_screen_rel[1] $
@@ -278,27 +297,27 @@ endif else begin
       ; Calculate size of image to show
       current_vis_size = [ image_screen_mod_rel * screen_size[0],       $
                            image_screen_mod_rel * screen_size[0] *      $
-                           current_image_size[1]/current_image_size[0]  $
+                           image_out_size[1]/image_out_size[0]          $
                          ]
    
       ; Define image to show
-      if current_type eq 'true_color'                                                         $
-      then current_vis = CONGRID(current_image, 3, current_vis_size[0], current_vis_size[1])  $
-      else current_vis = CONGRID(current_image,    current_vis_size[0], current_vis_size[1])
+      if image_out_type eq 'true_color'                                                       $
+      then current_vis = CONGRID(image_out, 3, current_vis_size[0], current_vis_size[1])      $
+      else current_vis = CONGRID(image_out,    current_vis_size[0], current_vis_size[1])
       
    ; If Y-component is proportionally the biggest
    end else begin
 
       ; Calculate size of image to show
       current_vis_size = [ image_screen_mod_rel * screen_size[1] *       $
-                           current_image_size[0]/current_image_size[1],  $
+                           image_out_size[0]/image_out_size[1],          $
                            image_screen_mod_rel * screen_size[1]         $
                       ]
    
       ; Define image to show
-      if current_type eq 'true_color'                                                         $
-      then current_vis = CONGRID(current_image, 3, current_vis_size[0], current_vis_size[1])  $
-      else current_vis = CONGRID(current_image,    current_vis_size[0], current_vis_size[1])
+      if image_out_type eq 'true_color'                                                       $
+      then current_vis = CONGRID(image_out, 3, current_vis_size[0], current_vis_size[1])      $
+      else current_vis = CONGRID(image_out,    current_vis_size[0], current_vis_size[1])
       
    endelse
 
@@ -334,7 +353,7 @@ endelse
 ;   use IDL programs written for indexed-color displays without
 ;   modification. 
 
-case current_type of
+case image_out_type of
 
    ; Show image with Palette
    'palette' : begin
@@ -372,7 +391,7 @@ endcase
 ; ACTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-if not_refreshing then begin
+if not_preview then begin
 
 ; Define an array with a number of elements equal to the total number
 ; of actions
@@ -437,7 +456,7 @@ endif
 ; Start managing events! 
 ;XMANAGER, 'frontend', base
 
-if not_refreshing then begin
+if not_preview then begin
 
 ; Define menu for selecting one action
    XMENU, available_actions, $
@@ -461,22 +480,20 @@ endif
 ; Apply action
 ;----------------------
 
-; Set current_image to the original image if we are refreshing a image
-; or ADD_OPERATIONS option hasn't been set
-if not (not_refreshing && add_operations) then $
-   current_image = image_in 
-
-; This case act DIRECTLY over actions that depends only of the
-; front_end. For the rest of actions, it is called FRONTEND_ACTIONS
+; This case act DIRECTLY over main actions of the front_end.
+; For the rest of actions, FRONTEND_ACTIONS is called
 case current_action of
 
-   'Retain/Forget changes' : begin
+   'Open new image...' : begin
 
-      if add_operations       $
-      then add_operations = 0 $
-      else add_operations = 1
+      GOTO, SELECT_IMAGE
 
-      image_out = current_image
+   end
+
+   'Restart' : begin
+
+      image_out = image_in
+      image_out_type = image_in_type
 
    end
 
@@ -487,27 +504,46 @@ case current_action of
       then keep_original_size = 0  $
       else keep_original_size = 1
 
-      image_out = current_image
+      ; image_out is exactly the same one
    end
+
+   'Save as...' : begin
+
+      result = DIALOG_WRITE_IMAGE(current_image)
+
+   end
+
+
 
    'Exit' : GOTO, FINISH_EXECUTION
 
-                                ; Execute external operations
+   ; Here we make the difference:
+   ; We are passing current_image instead of image_out!
+
                                 ; WARNING: It over-rides CURRENT_TYPE,
                                 ; REFRESHING and INFO
    else : image_out = FRONTEND_ACTIONS(current_image, current_action, $
                                        current_type,                  $
+                                       image_out_type,                $
                                        r, g, b,                       $
-                                       not_refreshing,                $
+                                       not_preview,                   $
                                        info)
 
 endcase
 
 ;---------------------
-; Show new image
+; Upgrade current_image or not
 ;---------------------
-PRINT, 'You are working with a image of type: ', current_type
-current_image = image_out
+
+; If were are not in "Preview" mode, current_type/_image are set to 
+if not_preview then begin
+
+   current_image = image_out
+   current_type  = image_out_type
+
+endif
+
+; Display image_out
 GOTO, REFRESH_WINDOW
 
 FINISH_EXECUTION: $
