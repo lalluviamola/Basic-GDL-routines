@@ -1,10 +1,23 @@
-FUNCTION CONVOL_FILTER, image_in, FILTER=filter
+FUNCTION CONVOL_FILTER, image_in, FILTER=filter_name, HIST_EQUAL=hist_equal, BYTSCL=bytscl
 
 ; This procedure performs various spatial filtering via 2-D
-; convolution with linear operator kernels on a TRUE COLOR IMAGE
+; convolution with linear operator kernels on a TRUE COLOR IMAGE or a
+; GRAYSCALE one
+
+
+; Defaults
+if N_ELEMENTS(filter_name) eq 0 then begin
+
+   MESSAGE, 'FILTER keyword is mandatory'
+   return, -1
+
+endif
+if N_ELEMENTS(hist_equal) eq 0 then hist_equal = 0
+if N_ELEMENTS(bytscl)     eq 0 then bytscl     = 0
+
 
 ; Define linear opearator kernels
-CASE filter of
+CASE filter_name of
 
    'boxcar_blur' : $
       filter    = (1/ 9.) * [[1, 1, 1], $ ; Boxcar      Blurring
@@ -196,11 +209,40 @@ CASE filter of
 
 endcase
 
+
+
+; Start operations
+
+
+; Create a image_out with the same dimensions that image_in
 image_out = image_in
 
-image_out[0, *, *] = CONVOL(REFORM(image_in[0, *, *]), filter, /EDGE_TRUNCATE)
-image_out[0, *, *] = CONVOL(REFORM(image_in[0, *, *]), filter, /EDGE_TRUNCATE)
-image_out[0, *, *] = CONVOL(REFORM(image_in[0, *, *]), filter, /EDGE_TRUNCATE)
+
+; Is it True-Color or Grayscale?
+case SIZE(image_in) of
+
+   2 : begin
+      
+      image_out = CONVOL(image_in, filter, /EDGE_TRUNCATE)
+
+      if hist_equal then image_out = HIST_EQUAL(image_out)
+      if bytscl     then image_out = BYTSCL(image_out)
+
+   end
+
+   3 : begin
+
+      for i = 0, 2 do begin
+
+         image_out[i, *, *] = CONVOL(REFORM(image_in[i, *, *]), filter, /EDGE_TRUNCATE)
+
+         if hist_equal then image_out[i, *, *] = HIST_EQUAL(image_out[i, *, *])
+
+         if bytscl     then image_out[i, *, *] =     BYTSCL(image_out[i, *, *])
+
+      endfor
+
+   end
 
 return, image_out
 
