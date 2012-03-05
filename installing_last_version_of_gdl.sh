@@ -53,16 +53,18 @@ GDL_COMMAND_NAME="gdl-svn"
 # Where to install GDL and the dependencies
 INSTALLATION_DIR="$HOME/My_Programs"
 
+GDL_INSTALLATION_DIR="$HOME/My_Programs/gdl"
+
 # Where to compile GDL and the dependencies (it can create more than 1 GB
 # of files, so if you have a quota of space used, you may want to use a usb
 # device instead for saving the compiled programs.
-COMPILATION_DIR="$HOME/Compiling"
+COMPILATION_DIR="/media/49da33e5-356f-4819-a487-8cc7de7b895b"
 
 # Probably the user want to have GDL in a more permanent site than dependencies
 GDL_COMPILATION_DIR="$HOME/Compiling"
 
 # Path to the directory with source tarballs.
-PKGS_DIR="$HOME/Compiling"
+PKGS_DIR="/media/49da33e5-356f-4819-a487-8cc7de7b895b"
 
 # Names of the tarballs (without extension) with the source code of the
 # dependencies that will be used for the installation. This script expects
@@ -110,12 +112,12 @@ function install_gdl-presentation {
 ###########################################################
 # Noticing about adding ${INSTALLATION_DIR} to the ${PATH}
 ###########################################################
-function install_gdl-clausure {
+function finishing_notes {
     echo "IMPORTANT:"
     echo "If not yet, probably you want to add ${INSTALLATION_DIR} to your \$PATH,"
     echo "so you can have access to the new programs that have been installed there."
     echo "You can run the following command for geting it:"
-    echo -e "\t echo \"PATH=\$HOME/My_Programs/bin:\$PATH\" >> \${HOME}/.bashrc"
+    echo -e "\t echo \"PATH=${GDL_INSTALLATION_DIR}/bin:\$PATH\" >> \${HOME}/.bashrc"
 }
 
 ###############################
@@ -325,33 +327,18 @@ function gdl-configuration {
     mkdir -p build_dir
     cd -
     cd ${GDL_COMPILATION_DIR}/gnudatalanguage/gdl/build_dir
-    cmake -DCMAKE_INSTALL_PREFIX=${INSTALLATION_DIR} \
+    cmake -DCMAKE_INSTALL_PREFIX=${GDL_INSTALLATION_DIR} \
           -DNETCDF=OFF \
 	  -DPSLIB=OFF \
           -DPLPLOTDIR=${INSTALLATION_DIR} \
           -DMAGICKDIR=${INSTALLATION_DIR} \
 	  -DWXWIDGETS=${INSTALLATION_DIR} \
-          -DFFTW=OFF \
           -DHDF=OFF \
           -DHDF5=OFF \
           -DCMAKE_BUILD_TYPE=Debug \
           -DPYTHON=OFF \
           ..
-#          -DNETCDFDIR=${INSTALLATION_DIR} \
-#          -DWXWIDGETSDIR=${INSTALLATION_DIR} \
-#          -DPSLIB=OFF \
     cd -
-
-#  Instructions for configuring with ./configure (it fails for me)
-#         ./configure --program-transform-name=$GDL_COMMAND_NAME \
-#                     --prefix=$INSTALLATION_DIR \
-#                     --with-plplotdir=$INSTALLATION_DIR \
-#                     --with-wxWidgets=$INSTALLATION_DIR \
-#                     --with-Magick=$INSTALLATION_DIR \
-#                     --with-hdf5=no \
-#                     --with-hdf=no \
-#                     --with-netcdf=$INSTALLATION_DIR
-#                     --with-python=no
 
 }
 
@@ -604,7 +591,8 @@ fi
 ###############################################
 # Creating directories if they don't exist yet
 ###############################################
-mkdir -p $INSTALLATION_DIR $COMPILATION_DIR
+mkdir -p $INSTALLATION_DIR $COMPILATION_DIR \
+    $GDL_INSTALLATION_DIR $GDL_COMPILATION_DIR
 
 ##########################################
 # Recovering the installation state
@@ -631,7 +619,8 @@ echo 'IMPORTANT: Check that main directories are OK:'
 echo -e '\t Dir where dependencies are packaged:' $PKGS_DIR
 echo -e '\t Dir for dependencies compilation:   ' $COMPILATION_DIR
 echo -e '\t Dir for GDL compilation:            ' $GDL_COMPILATION_DIR
-echo -e '\t Dir for installation:               ' $INSTALLATION_DIR
+echo -e '\t Dir for dependencies installation:  ' $INSTALLATION_DIR
+echo -e '\t Dir for GDL installation:           ' $GDL_INSTALLATION_DIR
 
 # Forze the user to check it
 echo 'Press ENTER when you are sure...'
@@ -644,7 +633,7 @@ do_step plplot extraction configuration compilation installation
 do_step netcdf extraction configuration compilation installation
 do_step gdl download_extraction configuration compilation installation
 do_step non_free_idl_source_routines install
-do_step install_gdl clausure
+finishing_notes
 
 # FIXME: Make a rule for fixing that after finishing the normal execution appears
 # the next echo.
