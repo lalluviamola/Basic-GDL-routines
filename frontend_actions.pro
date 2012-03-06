@@ -35,7 +35,7 @@ ptrStatus = Ptr_New('')
 
 ; Define a pointer for getting information about chosen setting values
 ; If it is a refresh, use the last values
-if N_ELEMENTS(info) ne 0 then $
+if info.status ne 'Init' then $
 
    ptrInfo   = Ptr_New({option:info.option, $
                          value:info.value}) $
@@ -141,7 +141,7 @@ case action of
    'Quantize' : begin
       PSEUDO_COLOR, image, image_out, r, g, b, $
                     PSEUDO_GRAYSCALE = 0,         $
-                    GRAY_COMPONENT = -1
+                    GRAY_COMPONENT = '0'
       image_out_type = 'palette'
    end
 
@@ -159,8 +159,11 @@ if info.status eq 'Cancel' then begin
 
    image_out = image
    image_out_type = image_type
+   info.status = 'Init'
 
 endif
+
+if info.status eq 'Done' then info.status = 'Init'
    
 return, image_out
 end

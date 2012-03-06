@@ -103,6 +103,9 @@ image_screen_mod_rel = 0.8
 ; This varaible skips or not (default) the blocks which ask for ACTIONS
 not_preview = 1
 
+; This variable keeps the state of the widget in mode "Preview"
+info = {option:0, value:0, status:'Init'}
+
 ; Define ACTIONS
 actions_table =                                                                           $
 [                                                                                         $
@@ -127,12 +130,8 @@ N_actions = (SIZE(actions_table, /DIMENSIONS))[1]
 SELECT_IMAGE: $
 
 ; Ask a image file
-has_chosen = DIALOG_READ_IMAGE( FILE = image_in_filename,              $
-                                PATH = !DIR + PATH_SEP() + 'examples'  $
-                                + PATH_SEP() + 'data')
-
-; If no one is chosen, finish execution
-if not has_chosen then GOTO, FINISH_EXECUTION
+   image_in_filename = DIALOG_PICKFILE(PATH = !DIR + PATH_SEP() + 'examples'  $
+                                       + PATH_SEP() + 'data')
 
 ; Check if image is readable and query it
 known_format = QUERY_IMAGE(image_in_filename, image_in_info)
@@ -437,42 +436,40 @@ endif
 
 ;current_action = actions_table[0, action_index]
 
-; Create an anonymous structure to hold widget IDs and the 
-; data structure. This structure becomes the user value of the 
-; top-level base widget. 
-;stash = { action:action, range:range, bDone=bDone, bCancel=bCancel}
-
-; Define the base widget that contains the buttons
-;base = WIDGET_BASE()
-
-; Define a button for any available action
-; /RETURN_NAME keyword will return the name of the button in the VALUE
-; field of returned events.
-;bgroup = CW_BGROUP(base, available_actions, /COLUMN, /RETURN_NAME)  
-
-; Display the widget
-;WIDGET_CONTROL, base, /REALIZE
-
-; Start managing events! 
-;XMANAGER, 'frontend', base
-
 if not_preview then begin
 
-; Define menu for selecting one action
-   XMENU, available_actions, $
-          BASE = base,       $
-          BUTTONS=B,         $
-          TITLE = 'Choose an action'
+; Define the base widget that contains the buttons
+   base = WIDGET_BASE()
 
-; Create menu
-   WIDGET_CONTROL, /REALIZE, BASE
+; Define a button for any available action
+   menu = CW_BGROUP(base, available_actions, /COLUMN)  
 
-; Catch which action was choosen
+; Display the widget
+   WIDGET_CONTROL, base, /REALIZE
+
+; Catch button pressed
    event = WIDGET_EVENT(base)
-   current_action = available_actions[ where(b eq event.id) ]
+   current_action = available_actions[ event.value ]
 
 ; Destroy the menu
    WIDGET_CONTROL, base, /DESTROY
+
+
+; Define menu for selecting one action
+;   XMENU, available_actions, $
+;          BASE = base,       $
+;          BUTTONS=B,         $
+;          TITLE = 'Choose an action'
+
+; Create menu
+;   WIDGET_CONTROL, /REALIZE, BASE
+
+; Catch which action was choosen
+;   event = WIDGET_EVENT(base)
+;   current_action = available_actions[ where(b eq event.id) ]
+
+; Destroy the menu
+;   WIDGET_CONTROL, base, /DESTROY
 
 endif
 
@@ -509,7 +506,7 @@ case current_action of
 
    'Save as...' : begin
 
-      result = DIALOG_WRITE_IMAGE(current_image)
+      result = DIALOG_WRITE_IMAGE(current_image, r, g, b)
 
    end
 
