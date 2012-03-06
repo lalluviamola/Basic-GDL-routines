@@ -10,7 +10,7 @@ PRO NAME_ME
 ; 
 ; Programmer:    Daniel Molina García (based on M. Messerotti's examples)
 ; Creation date: -
-; Environment:   i686 GNU/Linux 2.6.32-34-generic Ubuntu
+; Environment:   i686 GNU/Linux 2.6.32-38-generic Ubuntu
 ; Modified:      -
 ; Version:       0.1
 ;

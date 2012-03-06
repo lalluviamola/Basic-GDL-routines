@@ -1,0 +1,8 @@
+#!/bin/bash
+#echo $1 | sed s/\(.*\).pro/\1/
+
+template=template.pro
+target=${1}
+
+cp $template $target 
+emacs -nw $target
