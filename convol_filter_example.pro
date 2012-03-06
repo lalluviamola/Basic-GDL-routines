@@ -3,8 +3,8 @@ PRO CONVOL_FILTER_EXAMPLE
 ; Derive maximum screem size [pxs]
 SCREEN_SIZE, x_screen, y_screen
 
-x_standard_size = FLOOR(0.5 * 0.9 * x_screen)
-y_standard_size = x_standard_size
+standard_x_size = FLOOR(0.5 * 0.9 * x_screen)
+standard_y_size = standard_x_size
 
 ; Set indexed CT display
 DEVICE, DECOMPOSED = 0
@@ -19,7 +19,7 @@ repeat begin
 
    READ, option
 
-endrep until (option eq 1) || (option eq 3)
+endrep until ( (option eq 1) || (option eq 3) )
 
 
 ; Get a true-color or grayscale image of Mars by direct conversions from image file
@@ -55,7 +55,7 @@ filters = ['boxcar_blur',       $
 
 for i=0, N_ELEMENTS(filters) - 1 do begin
 
-   image_2 = CONVOL_FILTER(image_1, FILTER=filter[i])
+   image_2 = CONVOL_FILTER(image_1, FILTER=filters[i])
 
    ; Define title of the window
    win_title = STRUPCASE( filters[i] )
@@ -81,7 +81,7 @@ filters = ['classic_sharp',     $
 
 for i=0, N_ELEMENTS(filters) - 1 do begin
 
-   image_2 = CONVOL_FILTER(image_1, FILTER=filter[i], /HIST_EQUAL)
+   image_2 = CONVOL_FILTER(image_1, FILTER=filters[i], /HIST_EQUAL)
 
    ; Define title of the window
    win_title = STRUPCASE( filters[i] )
@@ -117,7 +117,7 @@ filters = ['bassrelief_NW',     $
 
 for i=0, N_ELEMENTS(filters) - 1 do begin
 
-   image_2 = CONVOL_FILTER(image_1, FILTER=filter[i], /BYTSCL)
+   image_2 = CONVOL_FILTER(image_1, FILTER=filters[i], /BYTSCL)
 
    ; Define title of the window
    win_title = STRUPCASE( filters[i] )
@@ -133,21 +133,21 @@ for i=0, N_ELEMENTS(filters) - 1 do begin
 
 endfor
 
+; Other filters
 
 
-
-filters = ['Sobel_H',      $
-           'Sobel_V',      $
-           'Kirsch_H',     $
-           'Kirsch_V',     $
-           'Prewitt_H',    $
-           'Prewitt_V',    $
-           'Laplacian'     $
+filters = ['sobel_H',      $
+           'sobel_V',      $
+           'kirsch_H',     $
+           'kirsch_V',     $
+           'prewitt_H',    $
+           'prewitt_V',    $
+           'laplacian'     $
           ]
 
 for i=0, N_ELEMENTS(filters) - 1 do begin
 
-   image_2 = CONVOL_FILTER(image_1, FILTER=filter[i], /HIST_EQUAL)
+   image_2 = CONVOL_FILTER(image_1, FILTER=filters[i], /HIST_EQUAL)
 
    ; Convert filtered image to binary
    case option of
@@ -176,9 +176,9 @@ endfor
 ;----- Unsharp masking (TWO STEPS)
 
 ; Unsharp mask
-unsharp_mask_1   = CONVOL_FILTER(image_1, FILTER='Unsharp_Mark')
+unsharp_mask_1   = CONVOL_FILTER(image_1, FILTER='unsharp_mask')
 
-expanded_unitary = CONVOL_FILTER(image_1, FILTER='Expd_unitary')
+expanded_unitary = CONVOL_FILTER(image_1, FILTER='expd_unitary')
 
 
 ; Define plot labels
@@ -200,14 +200,13 @@ PRESS_MOUSE
 
 case option of
 
-   1 : image_2 = HIST_EQUAL(4. * expanded_unitary[i, *, *] - 3. * unsharp_mask_1[i, *, *] )
+   1 : image_2 = HIST_EQUAL(4. * expanded_unitary - 3. * unsharp_mask_1)
 
-   3 : for i = 0, 2 do begin
+   3 : for i = 0, 2 do $
    
       image_2[i, *, *] = HIST_EQUAL(4. * expanded_unitary[i, *, *] - 3. * unsharp_mask_1[i, *, *] )
 
-   endfor
-
+endcase
 
 ; Define plot labels
 win_title = 'UNSHARP MASKING (STEP 2)'
@@ -227,7 +226,7 @@ PRESS_MOUSE
 ; ------- Unsharp masking (ONE STEP: Combined kernel)
 
 
-image_2 = CONVOL_FILTER(image_1, FILTER='USP_Masking', /HIST_EQUAL)
+image_2 = CONVOL_FILTER(image_1, FILTER='usp_masking', /HIST_EQUAL)
 
 ; Define plot labels
 win_title = 'UNSHARP MASKING (Only one step: Combined kernel)'

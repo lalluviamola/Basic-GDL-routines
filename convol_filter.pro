@@ -19,27 +19,27 @@ if N_ELEMENTS(bytscl)     eq 0 then bytscl     = 0
 ; Define linear opearator kernels
 CASE filter_name of
 
-   'boxcar_blur' : $
+   'boxcar_blur' :    $
       filter    = (1/ 9.) * [[1, 1, 1], $ ; Boxcar      Blurring
                              [1, 1, 1], $
                              [1, 1, 1]]
 
-   'blur_50pc' : $
+   'blur_50pc' :      $
       filter    = (1/10.) * [[1, 1, 1], $ ; 50%         Blurring
                              [1, 2, 1], $
                              [1, 1, 1]]
 
-   'light_blur' : $
+   'light_blur' :     $
       filter    = (1/16.) * [[1, 1, 1], $ ; Light       Blurring
                              [1, 8, 1], $
                              [1, 1, 1]]
 
-   'minimal_blur' : $
+   'minimal_blur' :   $
       filter    = (1/12.) * [[0, 1, 0], $ ; Minimal     Blurring
                              [1, 8, 1], $
                              [0, 1, 0]]
 
-   'gauss3x3_blur' : $
+   'gauss3x3_blur' :  $
       filter    = (1/16.) * [[1, 2, 1], $ ; 3x3 Gaussian   Blurring
                              [2, 4, 2], $
                              [1, 2, 1]]
@@ -54,12 +54,12 @@ CASE filter_name of
                   [-1,  9, -1], $
                   [-1, -1, -1]]
 
-   'crispening_1' : $
+   'crispening_1' :  $
       filter   = [[ 0, -1,  0], $ ; Crispening 1      
                   [-1,  5, -1], $
                   [ 0, -1,  0]]
 
-   'crispening_2' : $
+   'crispening_2' :  $
       filter   = [[ 1, -2,  1], $ ; Crispening 2      
                   [-2,  5, -2], $
                   [ 1, -2,  1]]
@@ -69,7 +69,7 @@ CASE filter_name of
                   [ 0,  1,  0], $
                   [ 0,  0,  0]]
 
-   'bassrelief_N' : $
+   'bassrelief_N' :  $
       filter   = [[ 0, -1,  0], $        ; Bass-Relief N     
                   [ 0,  1,  0], $
                   [ 0,  0,  0]]
@@ -79,7 +79,7 @@ CASE filter_name of
                   [ 0,  1,  0], $
                   [ 0,  0,  0]]
 
-   'bassrelief_E' : $
+   'bassrelief_E' :  $
       filter   = [[ 0,  0,  0], $         ; Bass-relief E     
                   [ 0,  1, -1], $
                   [ 0,  0,  0]]
@@ -89,7 +89,7 @@ CASE filter_name of
                   [ 0,  1,  0], $
                   [ 0,  0, -1]]
 
-   'bassrelief_S' : $
+   'bassrelief_S' :  $
       filter   = [[ 0,  0,  0], $ ; Bass-Relief S     
                   [ 0,  1,  0], $
                   [ 0, -1,  0]]
@@ -99,101 +99,101 @@ CASE filter_name of
                   [ 0,  1,  0], $
                   [-1,  0,  0]]
 
-   'bassrelief_W' : $
+   'bassrelief_W' :  $
       filter   = [[ 0,  0,  0], $ ; Bass-Relief W     
                   [-1,  1,  0], $
                   [ 0,  0,  0]]
 
-   'emboss_NW' : $
+   'emboss_NW' :     $
       filter   = [[-1, -1,  0], $ ; Emboss NW         
                   [-1,  1,  1], $
                   [ 0,  1,  1]]
 
-   'emboss_N' : $
+   'emboss_N' :      $
       filter      = [[-1, -1, -1], $ ; Emboss N          
                      [ 0,  1,  0], $
                      [ 1,  1,  1]]
 
-   'emboss_NE' : $
+   'emboss_NE' :     $
       filter      = [[ 0, -1, -1], $ ; Emboss NE         
                      [ 1,  1, -1], $
                      [ 1,  1,  0]]
 
-   'emboss_E' : $
+   'emboss_E' :      $
       filter      = [[ 1,  0, -1], $ ; Emboss E          
                      [ 1,  1, -1], $
                      [ 1,  0, -1]]
 
-   'emboss_SE' : $
+   'emboss_SE' :     $
       filter      = [[ 1,  1,  1], $ ; Emboss SE         
                      [ 1,  1, -1], $
                      [ 0, -1, -1]]
 
-   'emboss_S' : $
+   'emboss_S' :      $
       filter      = [[ 1,  1,  1], $ ; Emboss S          
                      [ 0,  1,  0], $
                      [-1, -1, -1]]
 
-   'emboss_SW' : $
+   'emboss_SW' :     $
       filter     = [[ 0,  1,  1], $ ; Emboss SW         
                     [-1,  1,  1], $
                     [-1, -1,  0]]
 
-   'emboss_W' : $
+   'emboss_W' :      $
       filter     = [[ 0,  1,  1], $ ; Emboss W          
                     [-1,  1,  1], $
                     [-1, -1,  0]]
 
-   'sobel_H' : $
+   'sobel_H' :       $
       filter     = [[-1, -2, -1], $ ; Sobel Horizontal  
                     [ 0,  0,  0], $
                     [ 1,  2,  1]]
 
-   'sobel_V' : $
+   'sobel_V' :       $
       filter     = [[-1,  0,  1], $ ; Sobel Verical     
                     [-2,  0,  2], $
                     [-1,  0,  1]]
 
-   'kirsch_H' : $
+   'kirsch_H' :      $
       filter     = [[-3, -3, -3], $ ; Kirsch Horizontal 
                     [-3,  0, -3], $
                     [ 5,  5,  5]]
 
-   'kirsch_V' : $
+   'kirsch_V' :      $
       filter     = [[-3, -3,  5], $ ; Kirsch Vertical   
                     [-3,  0,  5], $
                     [-3, -3,  5]]
 
-   'prewitt_H' : $
+   'prewitt_H' :     $
       filter     = [[-1, -1, -1], $ ; Prewitt Horizontal
                     [ 1, -2,  1], $
                     [ 1,  1,  1]]
    
-   'prewitt_V' : $
+   'prewitt_V' :     $
       filter     = [[-1,  1,  1], $ ; Prewitt Vertical
                     [-1, -2,  1], $
                     [-1,  1,  1]]
 
-   'laplacian' : $
+   'laplacian' :     $
       filter     = [[-1, -1, -1], $ ; Laplacian         
                     [-1,  8, -1], $
                     [-1, -1, -1]]
 
-   'Unsharp_Mask': $
+   'unsharp_mask':   $
       filter     = (1/256.) * [[  1,  4,   6,  4,  1], $ ; Unsharp Mask 
                                [  4, 16,  24, 16,  4], $
                                [  6, 24,  36, 24,  6], $
                                [  4, 16,  24, 16,  4], $
                                [  1 , 4,   6,  4,  1]]
 
-   'Expd_Unitary' : $
+   'expd_unitary' :  $
       filter     = (1/256.) * [[  0,  0,   0,  0,  0], $ ; Expanded Unity Kernel
                                [  0,  0,   0,  0,  0], $
                                [  0,  0, 256,  0,  0], $
                                [  0,  0,   0,  0,  0], $
                                [  0,  0,   0,  0,  0]]
 
-   'USP_Masking'  : $
+   'usp_masking' :   $
       filter     = (1/256.) * [[ -2,  -8, -12,  -8,  -2], $ ; Unsharp Masking      
                                [ -8, -32, -48, -32,  -8], $
                                [-12, -48, 696, -48, -12], $
@@ -202,7 +202,7 @@ CASE filter_name of
 
    else : begin
 
-      MESSAGE: 'Filter not recognised'
+      MESSAGE, 'Filter ' + filter_name + ' not recognised'
       return, -1
 
    end
@@ -219,7 +219,7 @@ image_out = image_in
 
 
 ; Is it True-Color or Grayscale?
-case SIZE(image_in) of
+case (SIZE(image_in))[0] of
 
    2 : begin
       
@@ -244,6 +244,8 @@ case SIZE(image_in) of
 
    end
 
+endcase
+
 return, image_out
 
-end
+END
