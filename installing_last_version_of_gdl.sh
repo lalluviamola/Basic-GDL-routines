@@ -19,14 +19,21 @@
 ######################################
 # Scope and description of the script
 ######################################
-# This script will help you to compile and install the last version of
-# GDL and some of its dependencies on a computer running GNU/Linux.
-# Also, it has the aim of helping you to understand better the process
-# and knowing how GDL works.
+# This script has the intention of helping you to compile and install
+# GDL and some of its dependencies on a computer running GNU/Linux
+# where:
 #
-# The original scope of this script is to install GDL 0.9.1 in any
+#  * You don't have super-user access.
+#  * You have a space's quota, so no free MB for compiling all.
+#
+# Also, it has the aim (maybe not yet) of helping you to understand
+# which is the utility of GDL dependencies, empowering you to 
+# understand what you need and you don't. Personally, I found very
+# difficult to have a working installation of GDL from source.
+#
+# The original scope of this script was to install GDL in any
 # user's account of the aula Paolo Poropat at University of Trieste,
-# Italy. GDL 0.9 should be installed yet on that computers, but there
+# Italy. GDL 0.9 should be installed yet on those computers, but there
 # are reasons for using the development version (or the lastest
 # stable one), since GDL is in a soon state and new compatibility
 # features are added continuosly.
@@ -35,6 +42,10 @@
 # still can be useful. However, you probably have to download other
 # dependencies and make several changes on the script, but it is
 # work done and it can save you time.
+#
+# This script is useful for those users which HASN'T SUPER-USER ACCESS
+# to the OS. If you have it, you could simply install the *-dev
+# versions of the dependencies and avoid to compile them.
 #
 # FIXME:
 # If you don't have other reason for compiling GDL that the fact of
@@ -48,7 +59,7 @@
 # Variables
 ############
 # The name of the command for invoking GDL
-GDL_COMMAND_NAME="gdl-svn"
+# GDL_COMMAND_NAME="gdl-svn"
 
 # Where to install GDL and the dependencies
 INSTALLATION_DIR="$HOME/My_Programs"
