@@ -67,24 +67,21 @@ title_2    = 'Radon Transform'
 x_title_2  = 'Theta [deg]'
 y_title_2  = 'Rho [pxs]'
 
-; Define ...
-x_min_1 = 0
-x_max_1 = x_size_in - 1
-y_min_1 = 0
-y_max_1 = y_size_in - 1
+; Define range of values of original image (X, Y)
+x_range = [ 0, x_size_in - 1 ]
+y_range = [ 0, y_size_in - 1 ]
 
-x_min_2 = MIN(theta) * !RADEG
-x_max_2 = MAX(theta) * !RADEG
-y_min_2 = MIN(rho)
-y_max_2 = MAX(rho)
+; Define range of values of randon transform (theta, rho)
+theta_range = [ MIN(theta), MAX(theta) ] * !RADEG
+rho_range   = [ MIN(rho)  , MAX(rho)   ]
 
-x_line_1  = 0.
-y_line_1  = 0.
-x_line_2  = 0.
-y_line_2  = 0.
+; Initialize maximum values
 rho_max   = 0.
 theta_max = 0.
 
+; Initialize straight line
+line_start_point = [ 0., 0. ]
+line_end_point   = [ 0., 0. ]
 
 ; Set indexed colortable display
 DEVICE, DECOMPOSED = 0
@@ -93,33 +90,30 @@ DEVICE, DECOMPOSED = 0
 LOADCT, 0
 
 ; Draw 2-D plots
-VIS2D2A, image_in, image_out,                             $
-         WTITLE   = win_title,                         $
-         TITLE_1  = title_1,                           $
-         XTITLE_1 = x_title_1, YTITLE_1  = y_title_1,  $
-         TITLE_2  = title_2,                           $
-         XTITLE_2 = x_title_2, YTITLE_2  = y_title_2,  $
-         XMIN_1   = x_min_1,   XMAX_1    = x_max_1,    $
-         YMIN_1   = y_min_1,   YMAX_1    = y_max_1,    $
-         XMIN_2   = x_min_2,   XMAX_2    = x_max_2,    $
-         YMIN_2   = y_min_2,   YMAX_2    = y_max_2,    $
-         XLINE_1  = x_line_1,  YLINE_1   = y_line_1,   $
-         XLINE_2  = x_line_2,  YLINE_2   = y_line_2,   $
+VIS2D2A, image_in, image_out,                           $
+         WTITLE   = win_title,                          $
+         TITLE_1  = title_1,                            $
+         XTITLE_1 = x_title_1, YTITLE_1  = y_title_1,   $
+         TITLE_2  = title_2,                            $
+         XTITLE_2 = x_title_2, YTITLE_2  = y_title_2,   $
+         XRANGE_1 = x_range,   XRANGE_2  = theta_range, $
+         YRANGE_1 = y_range,   YRANGE_2  = rho_range,   $
+         LINE_START = line_start_point,                 $
+         LINE_END   = line_end_point,                   $
          RHO_MAX  = rho_max,   THETA_MAX = theta_max
-
-
 
 PRESS_MOUSE
 
 ; Determine maximum of Radon transform
 max_radon = MAX(image_out)
 
-; Determine addresses of maximum
+; Determine address of maximum value
 max_addr = WHERE(image_out eq max_radon)
 
-; Decompose addresses into x and y addresses
-;
+; Decompose address into x and y address
+
 ;=================================
+; image = [[(x0, y0), ..., (xn, y0)], [(x0, y1), ...,]...] 
 ; address = x + x_size * y
 ; y =  INT(address) / INT(x_size)
 ; x = address - x_size * y
