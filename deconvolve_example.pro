@@ -1,3 +1,62 @@
+PRO DISPLAY_2D_3D, image, TITLE = title
+
+; DESCRIPTION: It displays 2 windows, one showing the original image
+; and 
+
+; Define size of the window (as twice the image's of the example's)
+x_win_size = 256 * 2
+y_win_size = 256 * 2
+
+; Set graphic mode to indexed
+DEVICE, DECOMPOSE = 0
+
+; Load some Color Table
+LOADCT, 4
+
+; Display Object image
+WINDOW, 1, XSIZE = x_win_size, YSIZE = y_win_size, $
+        TITLE = title
+
+; Display surface as shaded object
+SHADE_SURF, image, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, AZ = 15, $
+            XTITLE = '(pxs)', YTITLE = '(pxs)', CHARSIZE = 1.5
+
+; Open a second window to display 2-D views
+WINDOW, 2, XSIZE = x_win_size, YSIZE = y_win_size, $
+        TITLE = title
+
+; Display (resampled) object image
+TVSCL, CONGRID(image, x_win_size, y_win_size)
+
+PRESS_MOUSE
+
+END
+
+PRO DISPLAY_PS, ps, ps2, TITLE = title
+
+; DESCRIPTION: Display a power spectrum (shifted)
+
+; INPUT: ps       ABS(FFT of any image)^2
+;        ps2
+
+; Define size of the window (as twice the image's of the example's)
+x_win_size = 256 * 4
+y_win_size = 256 * 2
+
+WINDOW, 3, XSIZE = x_win_size, YSIZE = y_win_size, $
+        TITLE = title
+
+LOADCT, 0
+
+TVSCL, SHIFT( CONGRID(ALOG10(ps),  x_win_size/2, y_win_size), x_win_size/4, y_win_size/2 ), 0
+TVSCL, SHIFT( CONGRID(ALOG10(ps2), x_win_size/2, y_win_size), x_win_size/4, y_win_size/2 ), 1
+
+PRESS_MOUSE
+
+WDELETE, 3
+
+END
+
 PRO DECONVOLVE_EXAMPLE
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -28,25 +87,6 @@ PRO DECONVOLVE_EXAMPLE
 ; Environment: i686 GNU/Linux 2.6.32-38-generic Ubuntu
 ; Modified: -
 ; Version: 0.1
-;
-; License: Copyright 2011 Daniel Molina García
-;
-; This program is free software: you can redistribute it
-; and/or modify it under the terms of the GNU General Public
-; License as published by the Free Software Foundation,
-; either version 3 of the License, or (at your option) any
-; later version.
-;
-; This program is distributed in the hope that it will be
-; useful, but WITHOUT ANY WARRANTY; without even the implied
-; warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-; PURPOSE. See the GNU General Public License for more
-; details.
-;
-; You should have received a copy of the GNU General Public
-; License along with this program. If not, see
-; <http://www.gnu.org/licenses/>.
-;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;----------------------
@@ -89,43 +129,23 @@ s4 = 2
 ; Build object image
 for i = 0, x_size - 1 do begin
 
-for j = 0, y_size -1 do begin
+   for j = 0, y_size -1 do begin
 
-image_obj[i,j] = background + a1 * exp(-(FLOAT( i-x1 )^2 + FLOAT( j-y1 )^2)/ ( 2*s1^2 ) ) $
-                            + a2 * exp(-(FLOAT( i-x2 )^2 + FLOAT( j-y2 )^2)/ ( 2*s2^2 ) ) $
-                            + a3 * exp(-(FLOAT( i-x3 )^2 + FLOAT( j-y3 )^2)/ ( 2*s3^2 ) ) $
-                            + a4 * exp(-(FLOAT( i-x4 )^2 + FLOAT( j-y4 )^2)/ ( 2*s4^2 ) )
+      image_obj[i,j] = background + a1 * exp(-(FLOAT( i-x1 )^2 + FLOAT( j-y1 )^2)/ ( 2*s1^2 ) ) $
+                                  + a2 * exp(-(FLOAT( i-x2 )^2 + FLOAT( j-y2 )^2)/ ( 2*s2^2 ) ) $
+                                  + a3 * exp(-(FLOAT( i-x3 )^2 + FLOAT( j-y3 )^2)/ ( 2*s3^2 ) ) $
+                                  + a4 * exp(-(FLOAT( i-x4 )^2 + FLOAT( j-y4 )^2)/ ( 2*s4^2 ) )
+
+   endfor
 
 endfor
 
-endfor
+DISPLAY_2D_3D, image_obj, TITLE = 'Image with 4 point sources'
 
-; Display Object image
-WINDOW, 1, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Image with 4 point sources'
 
-; Set graphic mode to indexed
-DEVICE, DECOMPOSE = 0
-
-; Load red Color Table
-LOADCT, 3
-
-; Display surface as shaded object
-SHADE_SURF, image_obj, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, AZ = 15, $
-XTITLE = '(pxs)', YTITLE = '(pxs)', CHARSIZE = 1.5
-
-; Open a second window to display 2-D views
-WINDOW, 2, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Image with 4 Point Sources'
-
-; Display (resampled) object image
-TVSCL, CONGRID(image_obj, 2 * x_size, 2 * y_size)
-
-PRESS_MOUSE
-
-;-------------------------------
+;------------------------------------
 ; Define POINT SPREAD FUNCTION (psf)
-;-------------------------------
+;------------------------------------
 
 image_psf = FLTARR(x_size, y_size)
 
@@ -133,146 +153,122 @@ s_psf = 30
 
 for i = 0, x_size - 1 do begin
 
-for j = 0, y_size -1 do begin
+   for j = 0, y_size -1 do begin
 
-image_psf[i,j] = background + a1 * exp(-(FLOAT( i-x1 )^2 + FLOAT( j-y1 )^2)/ ( 2*s1^2 ) )
+      image_psf[i,j] = exp(-(FLOAT( i-x_size/2 )^2 + FLOAT( j-y_size/2 )^2)/ ( 2*s_psf^2 ) )
 
-endfor
+   endfor
 
 endfor
 
 ; Normalize PSF to unitary integral
 image_psf = image_psf / TOTAL(image_psf)
 
-; Display Object image
-WINDOW, 1, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Gaussian Point Spread Function'
-
-; Load red Color Table
-LOADCT, 3
-
-; Display surface as shaded object
-SHADE_SURF, image_psf, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, AZ = 15, $
-XTITLE = '(pxs)', YTITLE = '(pxs)', CHARSIZE = 1.5
-
-; Open a second window to display 2-D views
-WINDOW, 2, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Gaussian Point Spread Function'
-
-; Display (resampled) object image
-TVSCL, CONGRID(image_psf, 2 * x_size, 2 * y_size)
-
-PRESS_MOUSE
+DISPLAY_2D_3D, image_psf, TITLE = 'Gaussian Point Spread Function'
 
 
-;-----------------------------
-; Create (OBJECT IMAGE * PSF)
-;-----------------------------
 
-; Convolve original image with PSF
-image_conv = REAL_PART(SHIFT( $
-FFT( FFT(image_obj) * FFT(image_psf), 1 ), $
-x_size/2, y_size/2 ))
+;-----------------------------------------------
+; Create CONVOLVED image (OBJECT IMAGE * PSF)
+;-----------------------------------------------
 
-; Display Convolved image
-WINDOW, 1, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Image convolved with Gaussian PSF'
+; Convolve original image with PSF (Why SHIFTED?)
+image_conv = FFT( FFT(image_obj) * FFT(image_psf), 1 )
+image_conv = REAL_PART(SHIFT(image_conv, x_size/2, y_size/2))
 
-; Display surface as shaded object
-SHADE_SURF, image_conv, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, AZ = 15, $
-XTITLE = '(pxs)', YTITLE = '(pxs)', CHARSIZE = 1.5
+DISPLAY_2D_3D, image_conv, TITLE = 'Image convolved with Gaussian PSF'
 
-; Open a second window to display 2-D views
-WINDOW, 2, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Image convolved with Gaussian PSF'
 
-; Display (resampled) object image
-TVSCL, CONGRID(image_conv, 2 * x_size, 2 * y_size)
 
-PRESS_MOUSE
-
+;------------------
+; Adding NOISE
+;------------------
 
 snr = 0
 ; Ask for SRN selection
 repeat begin
 
-READ, PROMPT = 'Enter SNR (5-1000): ', snr
+   ; Ask Signal-to-Noise Ratio (SNR)
+   READ, PROMPT = 'Enter SNR (5-1000): ', snr
 
 endrep until (snr ge 5) && (snr le 1000)
 
 ; Add Gaussian noise to image according to selected SNR
-image_conv = image_conv + RANDOMN(seed, x_size, y_size) $
-+ (MAX(image_conv) - MIN(image_conv)) / snr
+noise_factor = ( MAX(image_conv) - MIN(image_conv) ) / snr
 
-; Display noisy image
-WINDOW, 1, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Noisy Image (SNR = ' + STRTRIM(STRING(snr), 2) + ')'
+; Calculate a normally-distributed, floating-point, pseudo-random
+; array with a mean of zero and a standard deviation of one
+image_noise = RANDOMN(seed, x_size, y_size) * noise_factor
 
-; Display surface as shaded object
-SHADE_SURF, image_conv, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, AZ = 15, $
-XTITLE = '(pxs)', YTITLE = '(pxs)', CHARSIZE = 1.5
-
-; Open a second window to display 2-D views
-WINDOW, 2, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Noisy Image (SNR = ' + STRTRIM(STRING(snr), 2) + ')'
-
-; Display (resampled) object image
-TVSCL, CONGRID(image_conv, 2 * x_size, 2 * y_size)
-
-PRESS_MOUSE
+DISPLAY_2D_3D, image_noise, TITLE = 'Additive Noise'
 
 
-; ---------------------
-; Apply OPTIMUM Linear Wiener-Fourier Deconvolution
-; ---------------------
 
-; Aprozimate (at 0 order) signal power spectrum with data power
+;-------------------------
+; Create Image with NOISE
+;--------------------------
+image_conv = image_conv + image_noise
+
+DISPLAY_2D_3D, image_conv, TITLE = 'Noisy Image (SNR = ' + STRTRIM(STRING(snr), 2) + ')'
+
+
+
+; ---------------------------------------------------
+; Apply OPTIMUM Linear WIENER-FOURIER Deconvolution
+; ---------------------------------------------------
+
+; PS of original image
+ps_obj = ABS(FFT(image_obj))^2
+
+; Aproximate (at 0 order) signal power spectrum with data power
 ; spectrum
-ps = ABS(FFT(image_conv))^2
+ps_signal  = ABS(FFT(image_conv))^2
+
+DISPLAY_PS, ps_signal, BYTSCL(ps_obj),  $
+            TITLE = 'Signal (really, Data) Power Spectrum'
 
 ; Aproximate noise power spectrum with high-frecuency data power
 ; spectrum
-pn = MEAN(ps[64:127, 64:126])
+mean_noise = MEAN(ps_signal[x_size/4 : x_size/2, y_size/4 : y_size/2])
 
 ; Approximate signal power spectrum with data power spectrum offset by
 ; noise power spectrum
-ps = ps - pn
+ps_signal = ps_signal - mean_noise
+ps_signal[ WHERE(ps_signal lt 0.) ] = 0.
+
+
+DISPLAY_PS, ps_signal, BYTSCL(ps_obj), TITLE = 'Signal Power Spectrum minus mean of high frequencies (noise).'
+
 
 ; Fourier transform PSF and normalize to 1.0 at frecuency [0, 0]
-p = FFT(image_psf)
-p = p/p[0, 0]
+fft_psf = FFT(image_psf)
+fft_psf = fft_psf/fft_psf[0, 0]
 
-; Fourier transform data
-d = FFT(image_conv)
+DISPLAY_PS, BYTSCL((ABS(fft_psf))^2), BYTSCL(ps_obj), TITLE = 'Power Spectrum of PSF (BYTSCLed)'
+
 
 ; Define deconvolution filter and normalize to 1.0 at frecuency [0, 0]
-h = COMPLEX( REAL_PART(p) - IMAGINARY(p) )/( ABS(p)^2 + pn / (ps * 0.001) )
+deconv_filter = COMPLEX( REAL_PART(fft_psf), - IMAGINARY(fft_psf) )
 
-h = h/h[0,0]
+deconv_filter = deconv_filter / ( (ABS(fft_psf))^2 + mean_noise / (ps_signal * 0.001) )
+
+deconv_filter = deconv_filter/deconv_filter[0,0]
 
 ; Deconvolve data by filter
-image_dec = REAL_PART(SHIFT(FFT(h * d, 1), x_size / 2, y_size / 2))
+image_dec = REAL_PART(SHIFT(FFT(deconv_filter * FFT(image_conv), 1), x_size / 2, y_size / 2))
 
-; Display deconvolved data
-WINDOW, 1, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Wiener-Fourier Deconvolver Image (SNR = ' + STRTRIM(STRING(snr), 2) + ')'
+; Show both power spectrums
+DISPLAY_PS, BYTSCL(ABS(deconv_filter * image_conv)^2), BYTSCL(ps_obj), TITLE = 'Deconvolved after apply filter'
 
-; Display surface as shaded object
-SHADE_SURF, image_dec, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, AZ = 15, $
-XTITLE = '(pxs)', YTITLE = '(pxs)', CHARSIZE = 1.5
 
-; Open a second window to display 2-D views
-WINDOW, 2, XSIZE = 2 * x_size, YSIZE = 2 * y_size, $
-TITLE = 'Wiener-Fourier Deconvolver Image (SNR = ' + STRTRIM(STRING(snr), 2) + ')'
+DISPLAY_2D_3D, image_dec, TITLE = 'Wiener-Fourier Deconvolver Image (SNR = ' + STRTRIM(STRING(snr), 2) + ')'
 
-; Display (resampled) object image
-TVSCL, CONGRID(image_dec, 2 * x_size, 2 * y_size)
 
-PRESS_MOUSE
 
-;-----------------------------------
+
+;--------------------------------------------------
 ; Apply non-linear RICHARDSON-LUCY DECONVOLUTION
-; ==============================================
+;--------------------------------------------------
 ; Ask for iteration number
 READ, PROMPT = 'Enter iteration no.:', itno
 
@@ -287,30 +283,18 @@ for n = 1, itno do begin
    t1 = t1 * SHIFT(FFT( FFT(t2) * FFT(image_psf) , 1 ),       $
                    x_size / 2, y_size / 2)
 
+   ; Show both power spectrum
+   DISPLAY_PS, BYTSCL(ABS(FFT(t2) * fft_psf)^2), BYTSCL(ps_obj), TITLE = 'Iteration: ' + STRING(n)
+
+
 endfor
 	
-  
 ; Derive deconvolved image by taking the real part
 image_dec = REAL_PART(t1)
 
-; Display the deconvolved image
-WINDOW, 1, XSIZE = 2 * x_size, YSIZE = 2 * y_size,                   $
-        TITLE = 'Richardson-Lucy Deconvolved Image (Iterations = ' + $
-        STRTRIM(STRING(FIX(itno)), 2) + ') (SNR = '                + $
-        STRTRIM(STRING(FIX(snr)), 2) + ')'
-
-SHADE_SURF, image_dec, XSTYLE = 1, YSTYLE = 1, ZSTYLE = 1, AZ = 15,  $
-            XTITLE = '[pxs]', YTITLE = '[pxs]', CHARSIZE = 1.5
-
-WINDOW, 2, XSIZE = 2 * x_size, YSIZE = 2 * y_size,                   $
-        TITLE = 'Richardson-Lucy Deconvolved Image (Iterations = ' + $
-        STRTRIM(STRING(FIX(itno)), 2) + ') (SNR = '                + $
-        STRTRIM(STRING(FIX(snr)), 2) + ')'
-
-TVSCL, CONGRID(image_dec, 2 * x_size, 2 * y_size)
-
-; Activate graphic cursor to wait for a mouse click
-PRESS_MOUSE
+DISPLAY_2D_3D, image_dec, TITLE = 'Richardson-Lucy Deconvolved Image (Iterations = ' + $
+                                  STRTRIM(STRING(FIX(itno)), 2) + ') (SNR = '        + $
+                                  STRTRIM(STRING(FIX(snr)), 2) + ')'
 
 ; Delete graphic windows
 WDELETE, 1, 2
