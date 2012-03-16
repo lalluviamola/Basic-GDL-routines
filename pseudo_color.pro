@@ -14,15 +14,13 @@ PRO PSEUDO_COLOR, image_in, image_out, r, g, b, PSEUDO_GRAYSCALE = grayscale, $
 ;                 b         (blue          "             )
 ;
 ;                 PSEUDO_GRAYSCALE (keyword)
-;                    Average all array components by default. If
-;                    PSEUDO_GRAYSCALE_WITH is passed then this keyword
-;                    has no effect.
+;                    Average all array components by default.
 ;
-;                 GRAY_COMPONENT={'R','r','G','g','B','b','0'} (keyword)
+;                 GRAY_COMPONENT={'R','r','G','g','B','b','3'} (keyword)
 ;                    Return 3 times the red, green OR blue component of the Color
 ;                     Table.
-;                    '0' means that GRAY_COMPONENT keyword is not used at all 
-;                    This keyword over-rides PSEUDO_GRAYSCALE's one.
+;                    '3' means average of the three color tables
+;                    It needs PSEUDO_GRAYSCALE = 1 for be used this KEYWORD
 ; Output:         -
 ; External calls: -
 ; 
@@ -52,21 +50,30 @@ PRO PSEUDO_COLOR, image_in, image_out, r, g, b, PSEUDO_GRAYSCALE = grayscale, $
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-if N_ELEMENTS(grayscale)      eq 0   then grayscale      = 0
-if N_ELEMENTS(gray_component) eq 0   then gray_component = '0'
+; No GRAYSCALE by default
+if N_ELEMENTS(grayscale) eq 0 then grayscale = 0 $
+else begin 
+
+   ; If GRAYSCALE, AVARAGE by default
+   if N_ELEMENTS(gray_component) eq 0 then gray_component = '3'
+
+endelse
 
 ; It works as keywords are defined at top.
-if gray_component             ne '0' then begin
+if grayscale eq 1 then begin
+
    if ((gray_component ne 'r') and (gray_component ne 'R') and $
        (gray_component ne 'g') and (gray_component ne 'G') and $
-       (gray_component ne 'b') and (gray_component ne 'B')) then begin
+       (gray_component ne 'b') and (gray_component ne 'B') and $
+       (gray_component ne '3')) then begin
 
       print, 'WARNING: GRAY_COMPONENT has not a valid value.'
-      print, '         Valid values: {R,r,G,g,B,b,0}'
-      gray_component = '0'
-      grayscale = 1             ; Force PSEUDO_GRAYSCALE if a bad option is used
+      print, '         Valid values: {R,r,G,g,B,b,3}'
+      print, 'It will be used the average.'
+      gray_component = '3'
       
-   endif else grayscale = 0     ; Over-ride PSEUDO_GRAYSCALE if GRAY_COMPONENT is used
+   endif
+
 endif
 
 ;-------------------
@@ -82,35 +89,40 @@ image_out = COLOR_QUAN(image_in, 1, r, g, b, COLORS = 255)
 
 ; If a array of the Color Table has been chosen to define the
 ; grayscale palette
-case gray_component of
-   '0' : break
-   'r' : begin
-      g = r & b = r
-   end
-   'R' : begin
-      g = r & b = r
-   end
-   'g' : begin
-      r = g & b = g
-   end
-   'G' : begin
-      r = g & b = g
-   end
-   'b' : begin
-      r = b & g = b
-   end
-   'B' : begin
-      r = b & g = b
-   end
-endcase  
-
-; If not, use the average value of every component
-; (I have not better ideas)
 if grayscale then begin
-   average_component = (r+g+b)/3
-   r = average_component
-   g = average_component
-   b = average_component
+
+   case gray_component of
+
+      'r' : begin
+         g = r & b = r
+      end
+      'R' : begin
+         g = r & b = r
+      end
+      'g' : begin
+         r = g & b = g
+      end
+      'G' : begin
+         r = g & b = g
+      end
+      'b' : begin
+         r = b & g = b
+      end
+      'B' : begin
+         r = b & g = b
+      end
+
+      '3' : begin
+
+         average_component = (r+g+b)/3
+         r = average_component
+         g = average_component
+         b = average_component
+         
+      end
+
+   endcase  
+
 endif
 
 end

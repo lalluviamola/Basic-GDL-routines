@@ -112,6 +112,9 @@ actions_table =                                                                 
  ['Open new image...',                 'true_color', 'mono_chrome', 'palette', 'binary'], $
  ['Restart',                           'true_color', 'mono_chrome', 'palette', 'binary'], $
  ['Original size/Better adjust size',  'true_color', 'mono_chrome', 'palette', 'binary'], $
+ ['Undersample',                       'true_color', 'mono_chrome', 'palette', 'binary'], $
+ ['Oversample',                        'true_color', 'mono_chrome', 'palette', 'binary'], $
+ ['Rotate',                            'true_color', 'mono_chrome', 'palette', 'binary'], $
  ['Binarize',                          '',           'mono_chrome', ''       , ''      ], $
  ['Quantize',                          'true_color', ''           , ''       , ''      ], $
  ['Save as...',                        'true_color', 'mono_chrome', 'palette', 'binary'], $
@@ -151,7 +154,10 @@ case image_in_info.channels of
       if image_in_info.has_palette then begin
 
          image_in_type = 'palette'  
-         r = r_in & g = g_in & b = b_in
+
+         ; Define the CT for output_images and current_images
+         r_out     = r_in & g_out     = g_in &     b_out = b_in
+         current_r = r_in & current_g = g_in & current_b = b_in 
 
       end else begin
 
@@ -226,6 +232,7 @@ image_out      = image_in
 current_image  = image_in
 image_out_type = image_in_type
 current_type   = image_in_type
+; NOTE: r_out, current_r, etc have been defined before
 
 ;------------------------------------------------------------------------------------
 ; MAIN LOOP: Before entering here must be set correctly IMAGE_OUT(_TYPE)
@@ -357,7 +364,7 @@ case image_out_type of
    ; Show image with Palette
    'palette' : begin
       DEVICE, DECOMPOSED = 0 
-      TVLCT, r, g, b
+      TVLCT, r_out, g_out, b_out
       TV, current_vis
 
    end
@@ -491,6 +498,11 @@ case current_action of
 
       image_out = image_in
       image_out_type = image_in_type
+      if N_ELEMENTS(r_in) ne 0 then begin
+
+         r_out = r_in & g_out = g_in & b_out = b_in
+
+      endif
 
    end
 
@@ -519,17 +531,18 @@ case current_action of
 
                                 ; WARNING: It over-rides CURRENT_TYPE,
                                 ; REFRESHING and INFO
-   else : image_out = FRONTEND_ACTIONS(current_image, current_action, $
-                                       current_type,                  $
-                                       image_out_type,                $
-                                       r, g, b,                       $
-                                       not_preview,                   $
+   else : image_out = FRONTEND_ACTIONS(current_image, current_action,   $
+                                       current_type,                    $
+                                       image_out_type,                  $
+                                       current_r, current_g, current_b, $
+                                       r_out, g_out, b_out,             $
+                                       not_preview,                     $
                                        info)
 
 endcase
 
 ;---------------------
-; Upgrade current_image or not
+; UPGRADE image_out to CURRENT_IMAGE or not
 ;---------------------
 
 ; If were are not in "Preview" mode, current_type/_image are set to 
@@ -537,6 +550,11 @@ if not_preview then begin
 
    current_image = image_out
    current_type  = image_out_type
+   if N_ELEMENTS(r_out) ne 0 then begin
+
+      current_r = r_out & current_g = g_out & current_b = b_out
+
+   endif
 
 endif
 
