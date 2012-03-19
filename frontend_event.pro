@@ -2,46 +2,16 @@ PRO FRONTEND_EVENT, ev
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This procedure is managed automatically by XMANAGER. It gets events
-; of the widgets and does action depending of that events (user
-; interactions with the widgets).
+; PURPOSE:
 ;
-;  * If event is the selection of an ACTION in the main menu, then start
-;    this action.
-;
-;  * If event is the selection of a parameter, then catch it and gives
-;    it to the correct function/procedure.
+;    This procedure is managed automatically by XMANAGER. It gets
+;    events of the widgets and save settings on the pointer which
+;    comes in the UVALUE of the widget.
 ;
 ; Input:          event
 ; Output:         -
 ; External calls: -
-; 
-; Programmer:    Daniel Molina García (based on M. Messerotti's examples)
-; Creation date: -
-; Environment:   i686 GNU/Linux 2.6.32-34-generic Ubuntu
-; Modified:      -
-; Version:       0.1
 ;
-; License: Copyright 2011 Daniel Molina García 
-;
-;          This program is free software: you can redistribute it
-;          and/or modify it under the terms of the GNU General Public
-;          License as published by the Free Software Foundation,
-;          either version 3 of the License, or (at your option) any
-;          later version.
-;
-;          This program is distributed in the hope that it will be
-;          useful, but WITHOUT ANY WARRANTY; without even the implied
-;          warranty of  MERCHANTABILITY or FITNESS FOR A PARTICULAR
-;          PURPOSE.  See the GNU General Public License for more
-;          details.
-;
-;          You should have received a copy of the GNU General Public
-;          License along with this program.  If not, see
-;          <http://www.gnu.org/licenses/>.
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ; Some information about EVENT structure:
 ;-----------------------------------------
 ; (Source:
@@ -72,6 +42,10 @@ PRO FRONTEND_EVENT, ev
 ; organization. This value is not used by the widget in any way, and
 ; exists entirely for the convenience of the IDL programmer. This
 ; keyword allows you to obtain the current user value. 
+
+
+
+
 
 ; Retrieve the anonymous structure contained in the user value of 
 ; the top-level base widget. 

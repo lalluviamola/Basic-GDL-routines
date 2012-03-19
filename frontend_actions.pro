@@ -1,17 +1,23 @@
 FUNCTION GRAB_BUTTON, ev 
+;
+; PURPOSE:
+;
+;     Save the state of a widget button. I use this callback bacause
+;     I don't know a better way of doing it inside FRONTEND_EVENT
 
-  ; Get the 'stash' structure. 
-  WIDGET_CONTROL, ev.TOP, GET_UVALUE = stash 
+; Get the 'stash' structure. 
+WIDGET_CONTROL, ev.TOP, GET_UVALUE = stash 
 
-  ; Get the value and user value (indicating block of options)
-  ; from the widget that generated the event. 
-  WIDGET_CONTROL, ev.ID, GET_VALUE = option, GET_UVALUE = group
+; Get the value and user value (indicating block of options)
+; from the widget that generated the event. 
+WIDGET_CONTROL, ev.ID, GET_VALUE = option, GET_UVALUE = group
 
-  (*stash.ptrInfo).options[group] = option
+(*stash.ptrInfo).options[group] = option
 
-  ; Reset the top-level widget's user value to the updated 
-  ; 'stash' structure. 
-  WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash 
+; Reset the top-level widget's user value to the updated 
+; 'stash' structure. 
+WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash 
+
 END 
 
 
@@ -26,18 +32,22 @@ FUNCTION WIDGET_ASK_TRANSFORMATION_PARAMETERS, $
    EXCL_LABEL1  = excl_label,        $
    EXCL_LABEL2  = excl_label_2
 
-; ATENTION: I don't know why, the image window goes to background
-;           when this function is called after choosen
-;           'Cancel' button 
+; PURPOSE:
 ;
-; Input: PARAMETERS idea is not really implemented yet
+;    Make easy and transparent the construction of a WIDGET for
+;    FRONTEND_ACTIONS function.
+;
+; ATENTION: 
+;
+;    I don't know why, the image window goes to background
+;    when this function is called after choosen 'Cancel' button.
+;    Minimize the rest of windows for always watching the image. 
 
-; Define a pointer for getting information about button pressed by the
-; user 
+
+; Define a pointer for keeping information about settings of the ACTION
 ptrStatus = Ptr_New('')
 
-; Define a pointer for getting information about chosen setting values
-; but if it is a refresh, use the last values
+; If it is "Preview" mode, use last values
 if info.status ne 'Init' then begin
 
    ptrInfo   = Ptr_New({options:info.options, value:info.value})
@@ -129,7 +139,7 @@ stash = {bCancel:bCancel, bRefresh:bRefresh, bDone:bDone, $
 WIDGET_CONTROL, mainBase, /REALIZE
 WIDGET_CONTROL, mainBase, SET_UVALUE = stash
 
-; Let work FRONTEND_EVENTS until widget be destroyed
+; Let work FRONTEND_EVENT until widget be destroyed
 XMANAGER, 'FRONTEND', mainBase
 
 output = {   value:(*ptrInfo).value,         $
@@ -150,24 +160,35 @@ FUNCTION FRONTEND_ACTIONS, image, action,              $
                            r, g, b,                    $
                            r_out, g_out, b_out,        $
                            not_preview, info
-; DESCRIPTION: This procedure select which operation is used with any action
 ;
-; NOTE: Any action must over-write image_out_type and not_preview if
-; neccesary
+; PURPOSE:
 ;
-; Any action can take advantage of the above defined FUNCTION
-; WIDGET_ASK_TRANSFORMATION_PARAMETERS.
+;      This function maps functions to every ACTION. The "syntax" of
+;      this function should be easy, since it is the part of FRONTEND
+;      that the devoloper want to modificate for including/modificate
+;      available ACTIONs.
+;     
+;
+; NOTE:
+;      Any action must over-write image_out_type and not_preview if
+;      neccesary
+;
+;      Any action can take advantage of the above defined:
+;      WIDGET_ASK_TRANSFORMATION_PARAMETERS.
 ;
 ;
 ; INPUT: image          Image to apply the action
 ;        action         Action to apply
-;        image_type     Type of image
-;        image_out_type Type of returned image
-;        r,g,b          Palette (if any). WARNING: It can be
-;                       over-written for convenience.
-;        not_preview    (really an output)
-;        info           (really an output, although it is used)
-;        EXPLAIN ME!
+;        image_type     Type associated to IMAGE
+;        image_out_type Type of returned image (it must be set here)
+;        r,g,b          Palette of IMAGE (if any).
+;        r_out, g_out, b_out
+;                       Palette (if any) of returned image (it must be
+;                                                           set here)
+;        not_preview    Indicate if we are coming from /going to
+;                         "Preview" mode (it must be set here)
+;        info           Keep the state of the parameters of the ACTION
+;                         (it must be set here)
 
 case action of
 
@@ -250,33 +271,33 @@ case action of
 
    end
 
-   'Rotate' : begin
-
-      info = WIDGET_ASK_TRANSFORMATION_PARAMETERS(                 $
-             info,                                                 $
-             RANGE = [0, 360],                                     $
-             LABEL = 'Set rotation angle (degrees):',              $              
-             EXCL_LABEL1 = 'Choose Method:',                       $
-             EXCL_OPTS1  = ['Nearest Neighbour', 'Bilinear Interpolation', 'ROT IDL procedure'])
-
-
-      if info.status ne 'Cancel' then begin
-
-         if info.options[0] eq 2 then image_out = ROT(image, info.value) else begin
-
-            image_out = SPATIAL_TRANSFORMATION(image, /TRANSROT,                $
-                                               ROT_VALUE = info.value * !DTOR,  $
-                                               TRANS_VALUES = [0, 0],           $
-                                               NEAR     = info.options[0] eq 0, $
-                                               BILINEAR = info.options[0] eq 1)
-
-            image_out_type = image_type
-
-         endelse
-
-      endif
-
-   end
+;   'Rotate' : begin
+;
+;      info = WIDGET_ASK_TRANSFORMATION_PARAMETERS(                 $
+;             info,                                                 $
+;             RANGE = [0, 360],                                     $
+;             LABEL = 'Set rotation angle (degrees):',              $              
+;             EXCL_LABEL1 = 'Choose Method:',                       $
+;             EXCL_OPTS1  = ['Nearest Neighbour', 'Bilinear Interpolation', 'ROT IDL procedure'])
+;
+;
+;      if info.status ne 'Cancel' then begin
+;
+;         if info.options[0] eq 2 then image_out = ROT(image, info.value) else begin
+;
+;            image_out = SPATIAL_TRANSFORMATION(image, /TRANSROT,                $
+;                                               ROT_VALUE = info.value * !DTOR,  $
+;                                               TRANS_VALUES = [0, 0],           $
+;                                               NEAR     = info.options[0] eq 0, $
+;                                               BILINEAR = info.options[0] eq 1)
+;
+;            image_out_type = image_type
+;
+;         endelse
+;
+;      endif
+;
+;   end
 
    else : begin
      print, 'Internal error: Chosen action has not instructions in FRONTEND_ACTIONS.'
