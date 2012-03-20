@@ -246,7 +246,7 @@ case !VERSION.OS_FAMILY of
       screen_top     = screen_size[1] - 1
       screen_bottom  = 0
    end
-   'Win32' : begin
+   'Windows' : begin
       screen_up_sign = -1 ; It marks if y-coordinate increase when going up on the screen
       screen_top     = 0
       screen_bottom  = screen_size[1] - 1
@@ -334,7 +334,7 @@ if keep_original_size eq 1 then begin
       'unix'  : begin
          ypos = screen_top - screen_up_sign * image_out_size[1]
          end
-      'Win32' : begin
+      'Windows' : begin
          ypos = screen_top
       end      
       else    : begin
@@ -344,10 +344,10 @@ if keep_original_size eq 1 then begin
    endcase 	
 
    ; Create WINDOW which will display the image
-   WINDOW, 1,                             $
-           XSIZE = image_out_size[0],     $
-           YSIZE = image_out_size[1],     $
-           XPOS  = screen_right,          $
+   WINDOW, 1,                                                 $
+           XSIZE = image_out_size[0],                         $
+           YSIZE = image_out_size[1],                         $
+           XPOS  = screen_right - image_out_size[0],          $
            YPOS  = ypos
 
 ; Adjust IMAGE to SHOW if original size is NOT desired
@@ -394,15 +394,15 @@ endif else begin
    ; Set the Y-position of window depending of OS
    case !VERSION.OS_FAMILY of
       'unix'  : ypos = screen_top - screen_up_sign * current_vis_size[1]
-      'Win32' : ypos = screen_top
+      'Windows' : ypos = screen_top
       else    : print, 'INTERNAL ERROR: OS Family not detected'
    endcase 	
    
    ; Create window
-   WINDOW, 1,                           $
-           XSIZE = current_vis_size[0], $
-           YSIZE = current_vis_size[1], $
-           XPOS  = screen_right,        $
+   WINDOW, 1,                                          $
+           XSIZE = current_vis_size[0],                $
+           YSIZE = current_vis_size[1],                $
+           XPOS  = screen_right - current_vis_size[0], $
            YPOS  = ypos
 
 endelse

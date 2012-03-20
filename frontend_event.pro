@@ -1,3 +1,26 @@
+FUNCTION GRAB_BUTTON, ev 
+;
+; PURPOSE:
+;
+;     Save the state of a widget button. I use this callback bacause
+;     I don't know a better way of doing it inside FRONTEND_EVENT
+
+; Get the 'stash' structure. 
+WIDGET_CONTROL, ev.TOP, GET_UVALUE = stash 
+
+; Get the value and user value (indicating block of options)
+; from the widget that generated the event. 
+WIDGET_CONTROL, ev.ID, GET_VALUE = option, GET_UVALUE = group
+
+(*stash.ptrInfo).options[group] = option
+
+; Reset the top-level widget's user value to the updated 
+; 'stash' structure. 
+WIDGET_CONTROL, ev.TOP, SET_UVALUE = stash 
+
+END 
+
+
 PRO FRONTEND_EVENT, ev
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
