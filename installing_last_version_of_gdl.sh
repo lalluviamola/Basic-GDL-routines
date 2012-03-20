@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Copyrigth 2011 Daniel Molina García
+#########################################################################
+# Copyrigth 2011, 2012 Daniel Molina García
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
+##########################################################################
+
 
 
 ######################################
@@ -24,41 +27,50 @@
 # where:
 #
 #  * You don't have super-user access.
-#  * You have a space's quota, so no free MB for compiling all.
+#  * You have a space's quota, so you haven't a lot of free MB for
+#     storing compilation stuff
 #
-# Also, it has the aim (maybe not yet) of helping you to understand
-# which is the utility of GDL dependencies, empowering you to 
-# understand what you need and you don't. Personally, I found very
-# difficult to have a working installation of GDL from source.
+#
+# Also, it has the aim (maybe not yet) of helping you, the newby
+# installer, to understand which is the sense of GDL dependencies, 
+# teaching you which you need and you don't.
+#
+# Personally, I found very difficult to have a working installation
+# of GDL from source. Also the commands for installing the
+# dependencies are difficult of remember. That's the reason I started
+# writting this script.
+#
+# It is possible that your missing dependencies are not the same that
+# in my case, but this script can still be useful since you can easily
+# add your code for managing it.
+#
+# This script is useful for those users which haven't SUPERUSER ACCESS
+# to the OS. If you have it, you could simply install the *-dev
+# versions of the dependencies and avoid to compile them.
+#
+# This script is useful because it makes easy to select the directory
+# for compilation of dependencies, etc., and you can select it inside
+# an EXTERNAL HARD DISK (e.g. with 2 GB free) 
 #
 # The original scope of this script was to install GDL in any
 # user's account of the aula Paolo Poropat at University of Trieste,
 # Italy. GDL 0.9 should be installed yet on those computers, but there
 # are reasons for using the development version (or the lastest
-# stable one), since GDL is in a soon state and new compatibility
-# features are added continuosly.
+# stable one), since GDL is in a soon state of dev and new
+# compatibility features are added continuosly.
 #
-# If you are installing GDL on any other environment, this script
-# still can be useful. However, you probably have to download other
-# dependencies and make several changes on the script, but it is
-# work done and it can save you time.
-#
-# This script is useful for those users which HASN'T SUPER-USER ACCESS
-# to the OS. If you have it, you could simply install the *-dev
-# versions of the dependencies and avoid to compile them.
-#
-# FIXME:
-# If you don't have other reason for compiling GDL that the fact of
-# having a working version, you
-# haven't to do it. Just only run the install_gdl_0.9.1.sh script
-# (but read the instructions on it before) which will copy to
-# your account the software compiled using this method.
-
+# It has the adventage that everything is included in a unique script
+# and you don't need anything more (except the dependencies tar).
+# 
+# This script could be good also for managing the installation of other
+# programs than GDL if dependencies are known, for example, knowing the
+# target computers.
 
 ############
 # Variables
 ############
 # The name of the command for invoking GDL
+# (not supported yet in this script)
 # GDL_COMMAND_NAME="gdl-svn"
 
 # Where to install GDL and the dependencies
@@ -107,8 +119,11 @@ AUXILIARY_FILE="${HOME}/installing_last_version_of_gdl.aux"
 ################################################### END OF VARIABLE SETTING
 
 ##########################
-# The core of the script
-##########################
+# The core of the script #
+########################################################
+# Modify or add here your compilation stuff for making #
+# this script useful for you. (Read the READMES)       #
+########################################################
 
 function install_gdl-presentation {
     echo "I'll try to assist you installing the last version of GDL."
@@ -200,8 +215,6 @@ function plplot-configuration {
     mkdir -p build_dir
     cd -
     cd ${COMPILATION_DIR}/$PLPLOT_PKG_NAME/build_dir
-
-    # FIXME: How to use with wxwidgets and benefits for GDL. (Recognised automatically?)
 
     # There is an error in INSTALL file. It's writen plplot_cmake as the
     # name of a directory needed by cmake.
@@ -312,8 +325,12 @@ function netcdf-installation {
 #  * Stable release: http://sourceforge.net/projects/gnudatalanguage/
 #  * Development version in a tar: http://gnudatalanguage.cvs.sourceforge.net/viewvc/gnudatalanguage/?view=tar
 #  * Development version through CVS:
-#    $  cvs -d:pserver:anonymous@gnudatalanguage.cvs.sourceforge.net:/cvsroot/gnudatalanguage login
+#    $ cvs -d:pserver:anonymous@gnudatalanguage.cvs.sourceforge.net:/cvsroot/gnudatalanguage login
 #    $ cvs -z3 -d:pserver:anonymous@gnudatalanguage.cvs.sourceforge.net:/cvsroot/gnudatalanguage co -P .
+#
+# 'cvs' is not always working, so I prefer to download the tarball
+#  in this script
+#
 ##############################
 
 
