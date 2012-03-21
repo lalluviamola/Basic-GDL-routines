@@ -146,12 +146,12 @@ function finishing_notes {
     echo -e "\t echo \"PATH=${GDL_INSTALLATION_DIR}/bin:\$PATH\" >> \${HOME}/.bashrc"
 }
 
-###############################
-# wxWidgets
-# Download link: http://wxwidgets.org/downloads/
-# README: docs/readme.txt
-# Probably you need to install libgtk2.0-dev package for configuring
-###############################
+######################
+# Pslib
+# Probably you don't need to install it
+######################
+
+
 function pslib-extraction {
     rm -rf ${COMPILATION_DIR}/${PSLIB_PKG_NAME}
     tar -xvzf ${PKGS_DIR}/${PSLIB_PKG_NAME}.tar.gz -C $COMPILATION_DIR
@@ -174,6 +174,15 @@ function pslib-installation {
     make install
     cd -
 }
+
+
+###############################
+# wxWidgets
+# Download link: http://wxwidgets.org/downloads/
+# README: docs/readme.txt
+# libgtk2.0-dev could help you to succesful configuration
+# (if you have root permissions)
+###############################
 
 
 function wxwidgets-extraction {
