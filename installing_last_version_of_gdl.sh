@@ -129,7 +129,7 @@ function install_gdl-presentation {
     echo "I'll try to assist you installing the last version of GDL."
     echo "Just as at this moment, I'll often pause the execution,"
     echo "waiting for a confirmation to continue. Then, it will"
-    echo "be time for cheking if something was wrong until the pause."
+    echo "be time for checking if something was wrong until the pause."
     echo "If necessary, exit me entering 3 and try to fix the problem."
     echo "Then, execute me again and I'll repeat again the last step."
     echo "I am supposing that you have set the variables of this script up yet!"
@@ -348,8 +348,8 @@ function gdl-download_extraction {
     # instead of GDL_COMPILATION_DIR
     rm -rf ${GDL_COMPILATION_DIR}/gnudatalanguage
     wget http://gnudatalanguage.cvs.sourceforge.net/viewvc/gnudatalanguage/?view=tar \
-	 -O ${PKGS_DIR}/gdl-cvs.tar.gz
-    tar -xvzf ${PKGS_DIR}/gdl-cvs.tar.gz -C ${GDL_COMPILATION_DIR}
+	 -O ${GDL_COMPILATION_DIR}/gdl-cvs.tar.gz
+    tar -xvzf ${GDL_COMPILATION_DIR}/gdl-cvs.tar.gz -C ${GDL_COMPILATION_DIR}
 
 #    else
 #	tar -xvzf ${PKGS_DIR}/${GDL_PKG_NAME}.tar.gz -C $COMPILING_DIR
@@ -369,7 +369,7 @@ function gdl-configuration {
 	  -DPSLIB=OFF \
           -DPLPLOTDIR=${INSTALLATION_DIR} \
           -DMAGICKDIR=${INSTALLATION_DIR} \
-	  -DWXWIDGETS=${INSTALLATION_DIR} \
+	  -DWXWIDGETSDIR=${INSTALLATION_DIR} \
           -DHDF=OFF \
           -DHDF5=OFF \
           -DCMAKE_BUILD_TYPE=Debug \
@@ -667,7 +667,9 @@ do_step install_gdl presentation
 do_step wxwidgets extraction configuration compilation installation
 do_step magick extraction configuration compilation checking installation
 do_step plplot extraction configuration compilation installation
-do_step netcdf extraction configuration compilation installation
+
+# Configuration of GDL fails for me with netcdf
+# do_step netcdf extraction configuration compilation installation
 do_step gdl download_extraction configuration compilation installation
 do_step non_free_idl_source_routines install
 finishing_notes
