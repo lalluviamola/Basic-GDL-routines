@@ -1,14 +1,18 @@
-PRO DRAW_HISTOGRAM, image, min_bin, max_bin, x0, y0, x1, y1
+PRO DRAW_HISTOGRAM, image, MIN=min_bin, MAX=max_bin, POSITION = position
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Draw image histogram in selected quadrant
 ;
 ; Input:          image
-;                 min_bin       minimum bin to be plotted
+;                 min_bin       minimum bin (value of minimum class of
+;                                            the histogram partition)
+;                                            to be plotted
 ;                 max_bin       maximum bin to be plotted
-;                 x0, y0        norm. coordinates of lower left corner
-;                 x1, y1        norm. coordinates of upper right corner
+;                 position      norm. coordinates of lower left corner
+;                               and norm. coordinates of upper right
+;                               corner
+;                               [x_left, y_bottom, x_right, y_top]
 ; Output:         -
 ; External calls: -
 ; 
@@ -38,16 +42,23 @@ PRO DRAW_HISTOGRAM, image, min_bin, max_bin, x0, y0, x1, y1
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; Derive image histogram
-image_histogram = HISTOGRAM(image)
+; It doesn't matter if min_bin or max_bin are not defined
 
-; Generate histogram bins
-histogram_bins = FINDGEN(N_ELEMENTS(image_histogram)) + MIN(image)
+; Derive image histogram
+histogram = HISTOGRAM(image)
+
+; Generate histogram bins, starting at minimum value of the image
+histogram_bins = FINDGEN(N_ELEMENTS(histogram)) + MIN(image)
 
 ; Plot image histogram in quadrant
-PLOT, histogram_bins, image_histogram, PSYM = 10, XTITLE = 'Colortable index', $
-      YTITLE = 'Index Density', POSITION = [x0, y0, x1, y2], /YLOG,            $
-      YRANGE = [10.0^0, 10.0^4], XRANGE = [min_bin, max_bin],                  $
-      XSTYLE = 1, YSTYLE = 1, /NOERASE
+PLOT, histogram_bins, histogram, PSYM = 10,     $
+      XTITLE = 'Colortable index',              $
+      YTITLE = 'Index Density',                 $
+      POSITION = position,                      $
+      /YLOG,                                    $
+      XRANGE = [min_bin, max_bin],              $
+      YRANGE = [10.0^0, 10.0^4],                $
+      XSTYLE = 1, YSTYLE = 1,                   $
+      /NOERASE
 
 END

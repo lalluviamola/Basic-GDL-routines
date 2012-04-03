@@ -1,4 +1,4 @@
-PRO HISTO_MANIPULATION
+PRO HIST_MANIPULATION_EXAMPLE
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -11,7 +11,8 @@ PRO HISTO_MANIPULATION
 ;                 CENTER_WINDOW_POS
 ;                 DRAW_HISTOGRAM
 ; 
-; Programmer:    Daniel Molina García (based on M. Messerotti's examples)
+; Programmer:    Daniel Molina García (based on M. Messerotti's
+; examples)
 ; Creation date: -
 ; Environment:   i686 GNU/Linux 2.6.32-34-generic Ubuntu
 ; Modified:      -
@@ -42,7 +43,7 @@ SCREEN_SIZE, x_screen, y_screen
 
 ; Define size of a standard graphic window (pxs) as 1/2 of 90 % of
 ; screen size to allow the display of two windows in the viewport
-x_standard_size = FLOOR(0.5, * 0.9 + x_screen) 
+x_standard_size = FLOOR(0.5 * 0.9 * x_screen) 
 y_standard_size = x_standard_size
 
 ; Derive centered window position
@@ -79,14 +80,10 @@ WINDOW, 1, XSIZE = 2 * x_standard_size, YSIZE = y_standard_size, $
 TV, image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, image, MIN = 0, MAX = 255, POSITION = [0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Determine max index (it will be used by next transformations)
-W = MAX(image)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;------------------------------ NEGATIVE IMAGE
 ; Open window
@@ -94,13 +91,13 @@ WINDOW, 1, XSIZE = 2 * x_standard_size, YSIZE = y_standard_size, $
         XPOS = x_win_pos, YPOS = y_win_pos, TITLE = 'Negative Image'
 
 ; Perform negative transformation
-modified_image = W - image
+modified_image = HIST_MANIPULATION(image, /NEGATIVE)
 
 ; Display negative image
 TV, modified_image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN= 0, MAX=255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
@@ -111,13 +108,13 @@ WINDOW, 1, XSIZE = 2 * x_standard_size, YSIZE = y_standard_size, $
         XPOS = x_win_pos, YPOS = y_win_pos, TITLE = 'Image Brightness Decrease'
 
 ; Perform negative transformation
-modified_image = image - W * 0.1
+modified_image = HIST_MANIPULATION(image, /DECREASE_BRIGHTNESS, VALUE = 0.1)
 
 ; Display modified image
 TV, modified_image,  0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN = 0, MAX = 255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
@@ -128,13 +125,13 @@ WINDOW, 1, XSIZE = 2 * x_standard_size, YSIZE = y_standard_size, $
         XPOS = x_win_pos, YPOS = y_win_pos, TITLE = 'Image Brightness Increase'
 
 ; Perform negative transformation
-modified_image = image + W * 0.2
+modified_image = HIST_MANIPULATION(image, /INCREASE_BRIGHTNESS, VALUE=0.2)
 
 ; Display negative image
 TV, modified_image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN=0, MAX=255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
@@ -147,13 +144,13 @@ WINDOW, 1, XSIZE = 2 * x_standard_size, YSIZE = y_standard_size, $
 n = 0.5
 
 ; Perform negative transformation
-modified_image = BYTSCL(FLOAT(image)^n / FLOAT(W)^(n-1))
+modified_image = HIST_MANIPULATION(image, /DECREASE_CONTRAST, VALUE = n)
 
 ; Display negative image
 TV, modified_image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN=0, MAX=255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
@@ -165,13 +162,13 @@ WINDOW, 1, XSIZE = 2 * x_standard_size, YSIZE = y_standard_size, $
 n = 2
 
 ; Perform negative transformation
-modified_image = BYTSCL(FLOAT(image)^n / FLOAT(W)^(n-1))
+modified_image = HIST_MANIPULATION(image, /INCREASE_CONTRAST, VALUE = n)
 
 ; Display negative image
 TV, modified_image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN=0, MAX=255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
@@ -187,7 +184,7 @@ modified_image = BYTSCL(image)
 TV, modified_image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN=0, MAX=255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
@@ -205,7 +202,7 @@ modified_image = HIST_EQUAL(image)
 TV, modified_image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN=0, MAX=255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
@@ -223,7 +220,7 @@ modified_image = ADAPT_HIST_EQUAL(image)
 TV, modified_image, 0
 
 ; Display histogram
-DRAW_HISTOGRAM, modified_image, 0, 255, 0.55, 0.1, 0.95, 0.9
+DRAW_HISTOGRAM, modified_image, MIN=0, MAX=255, POSITION=[0.55, 0.1, 0.95, 0.9]
 
 PRESS_MOUSE
 
