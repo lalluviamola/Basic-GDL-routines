@@ -96,6 +96,7 @@ PKGS_DIR="/media/49da33e5-356f-4819-a487-8cc7de7b895b"
 PLPLOT_PKG_NAME="plplot-5.9.9" #(.tar.gz package expected)
 WXWIDGETS_PKG_NAME="wxWidgets-2.8.12" #(.tar.bz2 package expected)
 MAGICK_PKG_NAME="ImageMagick-6.7.3-5" #(.tar.gz package expected) 
+GRAPHICS_MAGICK_PKG_NAME="GraphicsMagick-1.3.15" #(.tar.bz2 package expected)
 PSLIB_PKG_NAME="pslib-0.4.5" #(.tar.gz package expected) 
 #HDF_PKG_NAME="hdf-4.2.6-linux" #(.tar.gz package expected)
 #HDF5_PKG_NAME="hdf5-1.8.7" #(.tar.gz package expected)
@@ -283,6 +284,44 @@ function magick-installation {
     make install
     cd -
 }
+
+################################
+# GraphicsMagick
+# The Graphics Magick version used when writing this script was 1.3.15
+# Download link: http://sourceforge.net/projects/graphicsmagick/files/
+################################
+
+function graphics_magick-extraction {
+    rm -rf ${COMPILATION_DIR}/${GRAPHICS_MAGICK_PKG_NAME}
+    tar -xvjf ${PKGS_DIR}/${GRAPHICS_MAGICK_PKG_NAME}.tar.bz2 -C ${COMPILATION_DIR}
+}
+
+function graphics_magick-configuration {
+    cd ${COMPILATION_DIR}/${GRAPHICS_MAGICK_PKG_NAME}
+    ./configure --prefix=$INSTALLATION_DIR
+    cd -
+}
+
+function graphics_magick-compilation {
+    cd ${COMPILATION_DIR}/${GRAPHICS_MAGICK_PKG_NAME}
+    make
+    cd -
+}
+
+function graphics_magick-checking {
+    # It avoids the no version number by default of the .tar.gz
+    cd ${COMPILATION_DIR}/${GRAPHICS_MAGICK_PKG_NAME}
+    make check # It's not neccesary, but it's good
+    cd -
+}
+
+function graphics_magick-installation {
+    # It avoids the no version number by default of the .tar.gz
+    cd ${COMPILATION_DIR}/${GRAPHICS_MAGICK_PKG_NAME}
+    make install
+    cd -
+}
+
 
 ######################
 # NetCDF
@@ -665,7 +704,8 @@ read enter
 
 do_step install_gdl presentation
 do_step wxwidgets extraction configuration compilation installation
-do_step magick extraction configuration compilation checking installation
+#do_step magick extraction configuration compilation checking installation
+do_step graphics_magick extraction configuration compilation checking installation
 do_step plplot extraction configuration compilation installation
 
 # Configuration of GDL fails for me with netcdf
